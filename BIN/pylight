@@ -23,6 +23,7 @@ color = [
             # unbolded colors
             '\033[0;31m', '\033[0;32m', '\033[0;33m', '\033[0;34m', '\033[0;35m', '\033[0;36m'
         ]
+num_colors = len(color)
 reset_color = '\033[0m'
 if opts.match_line:
     for arg in args:
@@ -41,13 +42,18 @@ for line in sys.stdin:
         if matches_on_line:
             for m in matches_on_line:
                 # replace line with its colored split
-                rebuilt_line += line[last_match_end:m.start()] + color[i] + m.group() + reset_color
+                rebuilt_line += (line[last_match_end:m.start()] +
+                                 # if more matches than color, use the last available
+                                 # color for all remaining matches
+                                 color[i if num_colors > i else num_colors - 1] +
+                                 m.group() +
+                                 reset_color
+                                )
                 matched = True
                 # if the full line is highlighted and printed, we can break on the first match
                 if opts.match_line:
                     break
                 last_match_end = m.end()
-            print(rebuilt_line + line[last_match_end:], end='')
-
-        elif opts.print_unmatched:
-            print(line, end='')
+            line = rebuilt_line + line[last_match_end:]
+    if matched or print_unmatched:
+        print(line, end = '')
