@@ -57,9 +57,9 @@ for line in sys.stdin:
                                  + reset_color)
                 matched = True
                 # if the full line is highlighted and printed, we can break on the first match
+                last_match_end = m.end()
                 if opts.match_line:
                     break
-                last_match_end = m.end()
             line = rebuilt_line + line[last_match_end:]
     if matched or opts.print_unmatched:
         print(line, end = '')
