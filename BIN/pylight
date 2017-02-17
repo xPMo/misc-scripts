@@ -23,7 +23,7 @@ color = [
             # unbolded colors
             '\033[0;31m', '\033[0;32m', '\033[0;33m', '\033[0;34m', '\033[0;35m', '\033[0;36m'
         ]
-nocolor = '\033[0m'
+reset_color = '\033[0m'
 if opts.match_line:
     for arg in args:
         matches.append(re.compile(".*{0}.*".format(arg)))
@@ -35,13 +35,19 @@ for line in sys.stdin:
     matched = False
     for i,match in enumerate(matches):
         # search: match regex anywhere in line
-        m = match.search(line)
-        if m:
-            # replace line with its colored split
-            line = line[:m.start()] + color[i] + m.group() + nocolor + line[m.end():]
-            matched = True
-            # if the full line is highlighted and printed, we can break on the first match
-            if opts.match_line:
-                break
-    if matched or opts.print_unmatched:
-        print(line, end='')
+        matches_on_line = match.finditer(line)
+        rebuilt_line = ''
+        last_match_end = 0
+        if matches_on_line:
+            for m in matches_on_line:
+                # replace line with its colored split
+                rebuilt_line += line[last_match_end:m.start()] + color[i] + m.group() + reset_color
+                matched = True
+                # if the full line is highlighted and printed, we can break on the first match
+                if opts.match_line:
+                    break
+                last_match_end = m.end()
+            print(rebuilt_line + line[last_match_end:], end='')
+
+        elif opts.print_unmatched:
+            print(line, end='')
