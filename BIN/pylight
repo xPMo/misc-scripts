@@ -5,6 +5,7 @@ import re
 import sys
 
 parser = OptionParser()
+parser.usage = "%prog expr [expr2 [...]] [options]"
 parser.add_option("-l","--line", action="store_true", dest="match_line", help="match the whole line")
 parser.add_option("-o","--only", action="store_false", dest="print_unmatched", help="Print only lines which match", default=True)
 # opts: opts array
