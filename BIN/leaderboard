@@ -57,7 +57,7 @@ lookup_board
 Takes a gameid, leaderboardid, and a count and prints the top `count` entries
 in that leaderboard (calls lookup_steamid to get the profile name)
 """
-def lookup_board(gameid, levelid, count):
+def lookup_board(gameid, levelid, count, parseTime=True):
     url = 'http://steamcommunity.com/stats/' + gameid + '/leaderboards/' + levelid + '/?xml=1&start=1&end=' + str(count)
     # Make the request object
     req = urllib.request.urlopen(url)
@@ -66,10 +66,13 @@ def lookup_board(gameid, levelid, count):
     for entry in root.find('entries').findall('entry'):
         rank = entry.find('rank').text
         uname = lookup_steamid(entry.find('steamid').text)
-        minutes, milliseconds = divmod(int(entry.find('score').text), 60000)
-        seconds = float(milliseconds) / 1000
-        time = "%i:%06.3f" % (minutes, seconds)
-        print("│{:>4}│ {:<33}│{:>9} │".format('#'+rank, uname, time), flush=True)
+        score = entry.find('score').text
+        if parseTime:
+            minutes, milliseconds = divmod(int(score), 60000)
+            seconds = float(milliseconds) / 1000
+            score = "%i:%06.3f" % (minutes, seconds)
+        # need conditional here because of some wierd problems with a certain user
+        print("│{:>4}│ {:<33}│{:>9} │".format('#'+rank, "" if uname is None else uname, score), flush=True)
 """
 lookup_steamid
 
@@ -88,10 +91,13 @@ for mode, track_list in tracks.items():
         for name, val in track_list.items():
             for arg in args:
                 if re.search(arg.lower(), name):
+                    timed = True
+                    if mode == 'stunt':
+                        timed = False
                     print("\n{:^50}".format( name.title() + ": " + mode.title()))
                     print('┌────┬──────────────────────────────────┬──────────┐')
-                    print('│{:<4}│ {:<33}│{:^9} │'.format('Rank', 'Player', 'Time'))
+                    print('│{:<4}│ {:<33}│{:^9} │'.format('Rank', 'Player', 'Time' if timed else 'Score'))
                     print('├────┼──────────────────────────────────┼──────────┤')
-                    lookup_board('233610', val, int(opts.count))
+                    lookup_board('233610', val, int(opts.count), parseTime=timed)
                     print('└────┴──────────────────────────────────┴──────────┘')
                     break
