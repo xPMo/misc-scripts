@@ -41,9 +41,9 @@ tracks = {
         "tagtastic": "1572280"
     }
 }
-# """
+# ==============
 # Option parsing
-# """
+# =============
 parser = OptionParser()
 parser.usage = "%prog level [level2 [...]] [options] (level is a regular expression)"
 parser.add_option("-m", "--mode", action="store", default=".", dest="mode", help="Mode to lookup. Searches all by default")
@@ -52,13 +52,14 @@ parser.add_option("-n", "--number", action="store", default=15, dest="count", he
 parser.add_option("-s", "--simple", action="store_false", default=True, dest="pretty", help="Disable pretty box drawings")
 (opts, args) = parser.parse_args()
 
-"""
-lookup_board
-
-Takes a gameid, leaderboardid, and a count and prints the top `count` entries
-in that leaderboard (calls lookup_steamid to get the profile name)
-"""
 def lookup_board(gameid, levelid, count, parseTime=True):
+    """Look up a track on the steam leaderboard
+    
+    This function handles printing its data as well
+
+    Takes a gameid, leaderboardid, and a count and prints the top `count` entries
+    in that leaderboard (calls lookup_steamid to get the profile name)
+    """
     url = 'http://steamcommunity.com/stats/' + gameid + '/leaderboards/' + levelid + '/?xml=1&start=1&end=' + str(count)
     # Make the request object
     req = urllib.request.urlopen(url)
@@ -79,19 +80,17 @@ def lookup_board(gameid, levelid, count, parseTime=True):
         else:
             print("{:>4}  {:<33} {:>9}".format('#'+rank, uname, score), flush=True)
             
-"""
-lookup_steamid
-
-Takes a SteamID and gets the profile name
-"""
 def lookup_steamid(steamid):
+    """Takes a SteamID (a number) and gets the currently used name"""
     url = 'http://steamcommunity.com/profiles/' + steamid + '/?xml=1'
     req = urllib.request.urlopen(url)
     xml_tree = ET.parse(req)
     root = xml_tree.getroot()
     return root.find('steamID').text
 
-# main logic is here
+# ==================
+# MAIN program logic is here
+# ==================
 for mode, track_list in tracks.items():
     if re.search(opts.mode.lower(), mode):
         for name, val in track_list.items():
