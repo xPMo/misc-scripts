@@ -40,7 +40,7 @@ class TrackPageParser(HTMLParser):
         if self.print_data:
             print("{0}{1}".format(re.sub(r"\\t\\t\\t\\t", "", data),
                                   "\n" if self.print_newline else " "),
-                  end='')
+                  end='', flush=True)
 # """
 # Track IDs
 # """
