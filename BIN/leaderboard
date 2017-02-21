@@ -76,7 +76,7 @@ def lookup_board(gameid, levelid, count, parseTime=True):
             seconds = float(milliseconds) / 1000
             score = "%i:%06.3f" % (minutes, seconds)
         if(opts.pretty):
-            print("│{:>4}│ {:<33}│{:>9} │".format('#'+rank, uname, score), flush=True)
+            print("│{:>4} │ {:<33}│{:>9} │".format('#'+rank, uname, score), flush=True)
         else:
             print("{:>4}  {:<33} {:>9}".format('#'+rank, uname, score), flush=True)
             
@@ -104,9 +104,9 @@ for mode, track_list in tracks.items():
                         print('{:<4}  {:<33} {:^9}'.format('Rank', 'Player', 'Time' if timed else 'Score'))
                         lookup_board('233610', val, int(opts.count), parseTime=timed)
                     else:
-                        print('┌────┬──────────────────────────────────┬──────────┐')
-                        print('│{:<4}│ {:<33}│{:^9} │'.format('Rank', 'Player', 'Time' if timed else 'Score'))
-                        print('├────┼──────────────────────────────────┼──────────┤')
+                        print('┌─────┬──────────────────────────────────┬──────────┐')
+                        print('│{:<4} │ {:<33}│{:^9} │'.format('Rank', 'Player', 'Time' if timed else 'Score'))
+                        print('├─────┼──────────────────────────────────┼──────────┤')
                         lookup_board('233610', val, int(opts.count), parseTime=timed)
-                        print('└────┴──────────────────────────────────┴──────────┘')
+                        print('└─────┴──────────────────────────────────┴──────────┘')
                     break
