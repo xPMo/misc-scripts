@@ -1,49 +1,12 @@
 #!/usr/bin/env python3
 
 from optparse import OptionParser
-from html.parser import HTMLParser
+import xml.etree.ElementTree as ET
 import re
 import urllib.request
-# """
-# HTML Parser
-# 
-# For some reason "score"'s data has a bunch of \t's in it.
-# Not sure why.
-# """
-class TrackPageParser(HTMLParser):
-    # Looking for attr = lbentry
-    # relativeRank - playerName - score
-    def __init__(self):
-        HTMLParser.__init__(self)
-        self.print_data = False
-        self.print_newline = False
-    def handle_starttag(self, tag, attrs):
-        if tag == "title":
-            self.print_data = True
-            self.print_newline = True
-            return
-        for attr in attrs:
-            if attr == ("class","rR"):
-                self.print_data = True
-                return
-            if attr == ("class","playerName"):
-                self.print_data = True
-                return
-            if attr == ("class","score"):
-                self.print_data = True
-                self.print_newline = True
-                return
-    def handle_endtag(self, tag):
-        self.print_data = False
-        self.print_newline = False
-    def handle_data(self, data):
-        if self.print_data:
-            print("{0}{1}".format(re.sub(r"\\t\\t\\t\\t", "", data),
-                                  "\n" if self.print_newline else " "),
-                  end='', flush=True)
-# """
-# Track IDs
-# """
+
+"""Track IDs for Distance
+"""
 tracks = {
     "sprint": {
         "broken symmetry": "1558337",
@@ -83,23 +46,52 @@ tracks = {
 # """
 parser = OptionParser()
 parser.usage = "%prog level [level2 [...]] [options] (level is a regular expression)"
-parser.add_option("-m","--mode",action="store", default=".", dest="mode", help="Mode to lookup. Searches all by default")
+parser.add_option("-m", "--mode", action="store", default=".", dest="mode", help="Mode to lookup. Searches all by default")
 # parser.add_option("-g","--game-id", action="store", default='233610', dest="gameid", help="Game id to be used. Defaults to Distance. (You can try if you want.)")
+parser.add_option("-n", "--number", action="store", default=15, dest="count", help="Number of places to print. Views top 15 by default")
 (opts, args) = parser.parse_args()
 
-def lookup(gameid, levelid):
-    url = 'http://steamcommunity.com/stats/' + gameid + '/leaderboards/' + levelid
+"""
+lookup_board
+
+Takes a gameid, leaderboardid, and a count and prints the top `count` entries
+in that leaderboard (calls lookup_steamid to get the profile name)
+"""
+def lookup_board(gameid, levelid, count):
+    url = 'http://steamcommunity.com/stats/' + gameid + '/leaderboards/' + levelid + '/?xml=1&start=1&end=' + str(count)
     # Make the request object
     req = urllib.request.urlopen(url)
-    board_parser = TrackPageParser()
-    board_parser.feed(str(req.read()))
-# """
-# main
-# """
+    xml_tree = ET.parse(req)
+    root = xml_tree.getroot()
+    for entry in root.find('entries').findall('entry'):
+        rank = entry.find('rank').text
+        uname = lookup_steamid(entry.find('steamid').text)
+        minutes, milliseconds = divmod(int(entry.find('score').text), 60000)
+        seconds = float(milliseconds) / 1000
+        time = "%i:%06.3f" % (minutes, seconds)
+        print("│{:>4}│ {:<23}│{:>9} │".format('#'+rank, uname, time), flush=True)
+"""
+lookup_steamid
+
+Takes a SteamID and gets the profile name
+"""
+def lookup_steamid(steamid):
+    url = 'http://steamcommunity.com/profiles/' + steamid + '/?xml=1'
+    req = urllib.request.urlopen(url)
+    xml_tree = ET.parse(req)
+    root = xml_tree.getroot()
+    return root.find('steamID').text
+
+# main logic is here
 for mode, track_list in tracks.items():
     if re.search(opts.mode.lower(), mode):
         for name, val in track_list.items():
             for arg in args:
                 if re.search(arg.lower(), name):
-                    lookup('233610',val)
+                    print("\n{:^40}".format( name.title() + ": " + mode.title()))
+                    print('┌────┬────────────────────────┬──────────┐')
+                    print('│{:<4}│ {:<23}│{:^9} │'.format('Rank', 'Player', 'Time'))
+                    print('├────┼────────────────────────┼──────────┤')
+                    lookup_board('233610', val, int(opts.count))
+                    print('└────┴────────────────────────┴──────────┘')
                     break
