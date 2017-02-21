@@ -49,6 +49,7 @@ parser.usage = "%prog level [level2 [...]] [options] (level is a regular express
 parser.add_option("-m", "--mode", action="store", default=".", dest="mode", help="Mode to lookup. Searches all by default")
 # parser.add_option("-g","--game-id", action="store", default='233610', dest="gameid", help="Game id to be used. Defaults to Distance. (You can try if you want.)")
 parser.add_option("-n", "--number", action="store", default=15, dest="count", help="Number of places to print. Views top 15 by default")
+parser.add_option("-s", "--simple", action="store_false", default=True, dest="pretty", help="Disable pretty box drawings")
 (opts, args) = parser.parse_args()
 
 """
@@ -66,13 +67,18 @@ def lookup_board(gameid, levelid, count, parseTime=True):
     for entry in root.find('entries').findall('entry'):
         rank = entry.find('rank').text
         uname = lookup_steamid(entry.find('steamid').text)
+        # need conditional here because of some wierd problems with a certain user
+        uname = "" if uname is None else uname
         score = entry.find('score').text
         if parseTime:
             minutes, milliseconds = divmod(int(score), 60000)
             seconds = float(milliseconds) / 1000
             score = "%i:%06.3f" % (minutes, seconds)
-        # need conditional here because of some wierd problems with a certain user
-        print("│{:>4}│ {:<33}│{:>9} │".format('#'+rank, "" if uname is None else uname, score), flush=True)
+        if(opts.pretty):
+            print("│{:>4}│ {:<33}│{:>9} │".format('#'+rank, uname, score), flush=True)
+        else:
+            print("{:>4}  {:<33} {:>9}".format('#'+rank, uname, score), flush=True)
+            
 """
 lookup_steamid
 
@@ -95,9 +101,13 @@ for mode, track_list in tracks.items():
                     if mode == 'stunt':
                         timed = False
                     print("\n{:^50}".format( name.title() + ": " + mode.title()))
-                    print('┌────┬──────────────────────────────────┬──────────┐')
-                    print('│{:<4}│ {:<33}│{:^9} │'.format('Rank', 'Player', 'Time' if timed else 'Score'))
-                    print('├────┼──────────────────────────────────┼──────────┤')
-                    lookup_board('233610', val, int(opts.count), parseTime=timed)
-                    print('└────┴──────────────────────────────────┴──────────┘')
+                    if(not opts.pretty):
+                        print('{:<4}  {:<33} {:^9}'.format('Rank', 'Player', 'Time' if timed else 'Score'))
+                        lookup_board('233610', val, int(opts.count), parseTime=timed)
+                    else:
+                        print('┌────┬──────────────────────────────────┬──────────┐')
+                        print('│{:<4}│ {:<33}│{:^9} │'.format('Rank', 'Player', 'Time' if timed else 'Score'))
+                        print('├────┼──────────────────────────────────┼──────────┤')
+                        lookup_board('233610', val, int(opts.count), parseTime=timed)
+                        print('└────┴──────────────────────────────────┴──────────┘')
                     break
