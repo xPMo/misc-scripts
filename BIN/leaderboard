@@ -4,6 +4,8 @@ from optparse import OptionParser
 import xml.etree.ElementTree as ET
 import re
 import urllib.request
+from threading import Thread
+from time import sleep
 
 """Track IDs for Distance
 """
@@ -65,28 +67,39 @@ def lookup_board(gameid, levelid, count, parseTime=True):
     req = urllib.request.urlopen(url)
     xml_tree = ET.parse(req)
     root = xml_tree.getroot()
+    # table of entries, formatted in themselves
+    table = []
+    threads = []
     for entry in root.find('entries').findall('entry'):
         rank = entry.find('rank').text
-        uname = lookup_steamid(entry.find('steamid').text)
         # need conditional here because of some wierd problems with a certain user
-        uname = "" if uname is None else uname
         score = entry.find('score').text
         if parseTime:
             minutes, milliseconds = divmod(int(score), 60000)
             seconds = float(milliseconds) / 1000
             score = "%i:%06.3f" % (minutes, seconds)
+        table_row = {'rank' : rank, 'score' : score}
+        table.append(table_row)
+        steamid = entry.find('steamid').text
+        new_thread = Thread(target = lookup_steamid, args = (steamid, table_row))
+        new_thread.start()
+        threads.append(new_thread)
+    for thread in threads:
+        thread.join()
+    for row in table:
         if(opts.pretty):
-            print("│{:>4} │ {:<33}│{:>9} │".format('#'+rank, uname, score), flush=True)
+            print("│{:>4} │ {:<33}│{:>9} │".format('#'+row['rank'], row['uname'], row['score']))
         else:
-            print("{:>4}  {:<33} {:>9}".format('#'+rank, uname, score), flush=True)
-            
-def lookup_steamid(steamid):
+            print("{:>4}  {:<33} {:>9}".format('#'+row['rank'], row['uname'], row['score']))
+        
+def lookup_steamid(steamid, table_row):
     """Takes a SteamID (a number) and gets the currently used name"""
     url = 'http://steamcommunity.com/profiles/' + steamid + '/?xml=1'
     req = urllib.request.urlopen(url)
     xml_tree = ET.parse(req)
     root = xml_tree.getroot()
-    return root.find('steamID').text
+    uname = root.find('steamID').text 
+    table_row['uname'] = "" if uname is None else uname
 
 # ==================
 # MAIN program logic is here
