@@ -7,8 +7,7 @@ import urllib.request
 from threading import Thread
 from time import sleep
 
-"""Track IDs for Distance
-"""
+"""Track IDs for Distance"""
 tracks = {
     "sprint": {
         "broken symmetry": "1558337",
@@ -43,16 +42,6 @@ tracks = {
         "tagtastic": "1572280"
     }
 }
-# ==============
-# Option parsing
-# =============
-parser = OptionParser()
-parser.usage = "%prog level [level2 [...]] [options] (level is a regular expression)"
-parser.add_option("-m", "--mode", action="store", default=".", dest="mode", help="Mode to lookup. Searches all by default")
-# parser.add_option("-g","--game-id", action="store", default='233610', dest="gameid", help="Game id to be used. Defaults to Distance. (You can try if you want.)")
-parser.add_option("-n", "--number", action="store", default=15, dest="count", help="Number of places to print. Views top 15 by default")
-parser.add_option("-s", "--simple", action="store_false", default=True, dest="pretty", help="Disable pretty box drawings")
-(opts, args) = parser.parse_args()
 
 def lookup_board(gameid, levelid, count, parseTime=True):
     """Look up a track on the steam leaderboard
@@ -67,25 +56,32 @@ def lookup_board(gameid, levelid, count, parseTime=True):
     req = urllib.request.urlopen(url)
     xml_tree = ET.parse(req)
     root = xml_tree.getroot()
-    # table of entries, formatted in themselves
+    # each row is a dict(rank, score, uname)
     table = []
+    # list of threads, don't print until all are .join()'d
     threads = []
+
     for entry in root.find('entries').findall('entry'):
+        # get relavent data out of 'entry'
         rank = entry.find('rank').text
-        # need conditional here because of some wierd problems with a certain user
         score = entry.find('score').text
+        steamid = entry.find('steamid').text
         if parseTime:
             minutes, milliseconds = divmod(int(score), 60000)
             seconds = float(milliseconds) / 1000
             score = "%i:%06.3f" % (minutes, seconds)
         table_row = {'rank' : rank, 'score' : score}
         table.append(table_row)
-        steamid = entry.find('steamid').text
+        # 'table_row' is passed by reference, so lookup_steamid can edit that row of 'table'
+        # without any kind of indexing shenanigans
         new_thread = Thread(target = lookup_steamid, args = (steamid, table_row))
         new_thread.start()
         threads.append(new_thread)
+    
+    # Wait on threads
     for thread in threads:
         thread.join()
+
     for row in table:
         if(opts.pretty):
             print("│{:>4} │ {:<33}│{:>9} │".format('#'+row['rank'], row['uname'], row['score']))
@@ -93,21 +89,40 @@ def lookup_board(gameid, levelid, count, parseTime=True):
             print("{:>4}  {:<33} {:>9}".format('#'+row['rank'], row['uname'], row['score']))
         
 def lookup_steamid(steamid, table_row):
-    """Takes a SteamID (a number) and gets the currently used name"""
+    """add the username to the given row of the table
+    
+    Takes steamid (a numerical identifier)
+    looks up and fetches the associated profile name
+    adds it as a key-value pair in the row
+    """
     url = 'http://steamcommunity.com/profiles/' + steamid + '/?xml=1'
     req = urllib.request.urlopen(url)
     xml_tree = ET.parse(req)
     root = xml_tree.getroot()
     uname = root.find('steamID').text 
+    # need conditional here because of some wierd problems with a certain user
     table_row['uname'] = "" if uname is None else uname
 
 # ==================
 # MAIN program logic is here
 # ==================
+
+# Option parsing
+parser = OptionParser()
+parser.usage = "%prog level [level2 [...]] [options] (level is a regular expression)"
+parser.add_option("-m", "--mode", action="store", default=".", dest="mode", help="Mode to lookup. Searches all by default")
+# parser.add_option("-g","--game-id", action="store", default='233610', dest="gameid", help="Game id to be used. Defaults to Distance. (You can try if you want.)")
+parser.add_option("-n", "--number", action="store", default=15, dest="count", help="Number of places to print. Views top 15 by default")
+parser.add_option("-s", "--simple", action="store_false", default=True, dest="pretty", help="Disable pretty box drawings")
+(opts, args) = parser.parse_args()
+
+# Main loop
 for mode, track_list in tracks.items():
+    # limit mode to the mode requested
     if re.search(opts.mode.lower(), mode):
         for name, val in track_list.items():
             for arg in args:
+                # limit tracks to tracks requested
                 if re.search(arg.lower(), name):
                     timed = True
                     if mode == 'stunt':
@@ -121,5 +136,6 @@ for mode, track_list in tracks.items():
                         print('│{:<4} │ {:<33}│{:^9} │'.format('Rank', 'Player', 'Time' if timed else 'Score'))
                         print('├─────┼──────────────────────────────────┼──────────┤')
                         lookup_board('233610', val, int(opts.count), parseTime=timed)
-                        print('└─────┴──────────────────────────────────┴──────────┘')
+                        # Flush print buffer after each board
+                        print('└─────┴──────────────────────────────────┴──────────┘', flush=True)
                     break
