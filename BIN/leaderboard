@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 import re
 import urllib.request
 from threading import Thread
-from time import sleep
+import unicodedata
 
 """Track IDs for Distance"""
 tracks = {
@@ -83,10 +83,12 @@ def lookup_board(gameid, levelid, count, parseTime=True):
         thread.join()
 
     for row in table:
+        # fix width problems for unicode nonspacing marks
+        uname_width = 33 + nonspacing_count(row['uname'])
         if(opts.pretty):
-            print("│{:>4} │ {:<33}│{:>9} │".format('#'+row['rank'], row['uname'], row['score']))
+            print("│{:>4} │ {:<{width}}│{:>9} │".format('#'+row['rank'], row['uname'], row['score'], width=uname_width))
         else:
-            print("{:>4}  {:<33} {:>9}".format('#'+row['rank'], row['uname'], row['score']))
+            print("{:>4}  {:<{width}} {:>9}".format('#'+row['rank'], row['uname'], row['score'], width=uname_width))
         
 def lookup_steamid(steamid, table_row):
     """add the username to the given row of the table
@@ -102,6 +104,14 @@ def lookup_steamid(steamid, table_row):
     uname = root.find('steamID').text 
     # need conditional here because of some wierd problems with a certain user
     table_row['uname'] = "" if uname is None else uname
+
+def nonspacing_count(s):
+    """Counts the number of 'Nonspacing_Mark' characters in a string 's'"""
+    count = 0
+    for c in s:
+        if unicodedata.category(c) == 'Mn':
+            count += 1
+    return count
 
 # ==================
 # MAIN program logic is here
