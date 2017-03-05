@@ -58,7 +58,7 @@ def lookup_board(gameid, levelid, count, parseTime=True):
     root = xml_tree.getroot()
     # each row is a dict(rank, score, uname)
     table = []
-    # list of threads, don't print until all are .join()'d
+    # list of threads, blocks respective row until it is .join()'d
     threads = []
 
     for entry in root.find('entries').findall('entry'):
@@ -79,16 +79,14 @@ def lookup_board(gameid, levelid, count, parseTime=True):
         threads.append(new_thread)
     
     # Wait on threads
-    for thread in threads:
+    for thread, row in zip(threads, table):
         thread.join()
-
-    for row in table:
         # fix width problems for unicode nonspacing marks
         uname_width = 33 + nonspacing_count(row['uname'])
         if(opts.pretty):
-            print("│{:>4} │ {:<{width}}│{:>9} │".format('#'+row['rank'], row['uname'], row['score'], width=uname_width))
+            print("│{:>5} │ {:<{width}}│{:>9} │".format('#'+row['rank'], row['uname'], row['score'], width=uname_width))
         else:
-            print("{:>4}  {:<{width}} {:>9}".format('#'+row['rank'], row['uname'], row['score'], width=uname_width))
+            print("{:>5}  {:<{width}} {:>9}".format('#'+row['rank'], row['uname'], row['score'], width=uname_width))
         
 def lookup_steamid(steamid, table_row):
     """add the username to the given row of the table
@@ -139,13 +137,15 @@ for mode, track_list in tracks.items():
                         timed = False
                     print("\n{:^50}".format( name.title() + ": " + mode.title()))
                     if(not opts.pretty):
-                        print('{:<4}  {:<33} {:^9}'.format('Rank', 'Player', 'Time' if timed else 'Score'))
-                        lookup_board('233610', val, int(opts.count), parseTime=timed)
-                    else:
-                        print('┌─────┬──────────────────────────────────┬──────────┐')
-                        print('│{:<4} │ {:<33}│{:^9} │'.format('Rank', 'Player', 'Time' if timed else 'Score'))
-                        print('├─────┼──────────────────────────────────┼──────────┤')
+                        print('{:^6} {:<33} {:^9}'.format('Rank', 'Player', 'Score' if timed else 'Score'))
                         lookup_board('233610', val, int(opts.count), parseTime=timed)
                         # Flush print buffer after each board
-                        print('└─────┴──────────────────────────────────┴──────────┘', flush=True)
+                        print('', flush=True, end='')
+                    else:
+                        print('┌──────┬──────────────────────────────────┬──────────┐')
+                        print('│{:^6}│ {:<33}│{:^9} │'.format('Rank', 'Player', 'Score' if timed else 'Score'))
+                        print('├──────┼──────────────────────────────────┼──────────┤')
+                        lookup_board('233610', val, int(opts.count), parseTime=timed)
+                        # Flush print buffer after each board
+                        print('└──────┴──────────────────────────────────┴──────────┘', flush=True)
                     break
