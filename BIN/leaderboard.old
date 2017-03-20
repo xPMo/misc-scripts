@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# This is the old version, using HTMLParser
+# The xml version is much better, use it.
+
 from optparse import OptionParser
 from html.parser import HTMLParser
 import re
