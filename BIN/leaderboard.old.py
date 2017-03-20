@@ -7,13 +7,13 @@ from optparse import OptionParser
 from html.parser import HTMLParser
 import re
 import urllib.request
-# """
-# HTML Parser
-# 
-# For some reason "score"'s data has a bunch of \t's in it.
-# Not sure why.
-# """
 class TrackPageParser(HTMLParser):
+    """
+    HTML Parser
+
+    For some reason "score"'s data has a bunch of \t's in it.
+    Not sure why.
+    """
     # Looking for attr = lbentry
     # relativeRank - playerName - score
     def __init__(self):
@@ -44,9 +44,7 @@ class TrackPageParser(HTMLParser):
             print("{0}{1}".format(re.sub(r"\\t\\t\\t\\t", "", data),
                                   "\n" if self.print_newline else " "),
                   end='', flush=True)
-# """
 # Track IDs
-# """
 tracks = {
     "sprint": {
         "broken symmetry": "1558337",

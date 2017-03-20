@@ -7,7 +7,7 @@ import urllib.request
 from threading import Thread
 import unicodedata
 
-"""Track IDs for Distance"""
+# Track IDs for Distance
 tracks = {
     "sprint": {
         "broken symmetry": "1558337",
@@ -45,7 +45,7 @@ tracks = {
 
 def lookup_board(gameid, levelid, count, parseTime=True):
     """Look up a track on the steam leaderboard
-    
+
     This function handles printing its data as well
 
     Takes a gameid, leaderboardid, and a count and prints the top `count` entries
@@ -77,7 +77,7 @@ def lookup_board(gameid, levelid, count, parseTime=True):
         new_thread = Thread(target = lookup_steamid, args = (steamid, table_row))
         new_thread.start()
         threads.append(new_thread)
-    
+
     # Wait on threads
     for thread, row in zip(threads, table):
         thread.join()
@@ -87,10 +87,10 @@ def lookup_board(gameid, levelid, count, parseTime=True):
             print("│{:>5} │ {:<{width}}│{:>9} │".format('#'+row['rank'], row['uname'], row['score'], width=uname_width))
         else:
             print("{:>5}  {:<{width}} {:>9}".format('#'+row['rank'], row['uname'], row['score'], width=uname_width))
-        
+
 def lookup_steamid(steamid, table_row):
     """add the username to the given row of the table
-    
+
     Takes steamid (a numerical identifier)
     looks up and fetches the associated profile name
     adds it as a key-value pair in the row
@@ -99,7 +99,7 @@ def lookup_steamid(steamid, table_row):
     req = urllib.request.urlopen(url)
     xml_tree = ET.parse(req)
     root = xml_tree.getroot()
-    uname = root.find('steamID').text 
+    uname = root.find('steamID').text
     # need conditional here because of some wierd problems with a certain user
     table_row['uname'] = "" if uname is None else uname
 
