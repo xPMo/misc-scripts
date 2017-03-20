@@ -1,3 +1,4 @@
+#!/usr/bin/env sh
 cd BIN
 for file in * 
 do
