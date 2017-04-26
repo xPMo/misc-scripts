@@ -42,8 +42,11 @@ tracks = {
         "tagtastic": "1572280"
     }
 }
+def get_key(path):
+    """Gets your Steam web API key from the path provided."""
+    return open(path, 'r').read
 
-def lookup_board(gameid, levelid, count, parseTime=True):
+def lookup_board(key, gameid, levelid, count, parseTime=True):
     """Look up a track on the steam leaderboard
 
     This function handles printing its data as well
@@ -56,52 +59,41 @@ def lookup_board(gameid, levelid, count, parseTime=True):
     req = urllib.request.urlopen(url)
     xml_tree = ET.parse(req)
     root = xml_tree.getroot()
-    # each row is a dict(rank, score, uname)
-    table = []
-    # list of threads, blocks respective row until it is .join()'d
-    threads = []
+    ranks = []
+    scores = []
+    steamids = []
 
     for entry in root.find('entries').findall('entry'):
         # get relavent data out of 'entry'
-        rank = entry.find('rank').text
         score = entry.find('score').text
-        steamid = entry.find('steamid').text
         if parseTime:
             minutes, milliseconds = divmod(int(score), 60000)
             seconds = float(milliseconds) / 1000
             score = "%i:%06.3f" % (minutes, seconds)
-        table_row = {'rank' : rank, 'score' : score}
-        table.append(table_row)
-        # 'table_row' is passed by reference, so lookup_steamid can edit that row of 'table'
-        # without any kind of indexing shenanigans
-        new_thread = Thread(target = lookup_steamid, args = (steamid, table_row))
-        new_thread.start()
-        threads.append(new_thread)
+        ranks.append(entry.find('rank').text)
+        steamids.append(entry.find('steamid').text)
+        scores.append(score)
 
-    # Wait on threads
-    for thread, row in zip(threads, table):
-        thread.join()
-        # fix width problems for unicode nonspacing marks
-        uname_width = 33 + nonspacing_count(row['uname'])
-        if(opts.pretty):
-            print("│{:>5} │ {:<{width}}│{:>9} │".format('#'+row['rank'], row['uname'], row['score'], width=uname_width))
-        else:
-            print("{:>5}  {:<{width}} {:>9}".format('#'+row['rank'], row['uname'], row['score'], width=uname_width))
+    profiles = lookupsteamids(key, steamids)
+        
 
-def lookup_steamid(steamid, table_row):
-    """add the username to the given row of the table
+def lookup_steamids(key, steamids, table):
+    """Looks up a list of 64-bit steamids, makes an array of profile names
 
     Takes steamid (a numerical identifier)
     looks up and fetches the associated profile name
-    adds it as a key-value pair in the row
     """
-    url = 'http://steamcommunity.com/profiles/' + steamid + '/?xml=1'
-    req = urllib.request.urlopen(url)
-    xml_tree = ET.parse(req)
-    root = xml_tree.getroot()
-    uname = root.find('steamID').text
-    # need conditional here because of some wierd problems with a certain user
-    table_row['uname'] = "" if uname is None else uname
+    profiles = []
+    url = 'http://steamcommunity.com/profiles/?key=' + key + '&steamids=' + ','.join(steamids) + '&xml=1'
+    try:
+        req = urllib.request.urlopen(url)
+        xml_tree = ET.parse(req)
+        root = xml_tree.getroot()
+        for child in root:
+            profiles.append(child.personastate.text)
+    except urllib.error.HTTPError:
+        pass
+    return profiles
 
 def nonspacing_count(s):
     """Counts the number of 'Nonspacing_Mark' characters in a string 's'"""
@@ -122,6 +114,7 @@ parser.add_option("-m", "--mode", action="store", default=".", dest="mode", help
 # parser.add_option("-g","--game-id", action="store", default='233610', dest="gameid", help="Game id to be used. Defaults to Distance. (You can try if you want.)")
 parser.add_option("-n", "--number", action="store", default=15, dest="count", help="Number of places to print. Views top 15 by default")
 parser.add_option("-s", "--simple", action="store_false", default=True, dest="pretty", help="Disable pretty box drawings")
+parser.add_option("-k", "--key-path", action="store", default="~/.local/steamapikey", dest="key_path" help="Path to Steam API key. ~/.local/steamapikey by default")
 (opts, args) = parser.parse_args()
 
 # Main loop
@@ -138,14 +131,14 @@ for mode, track_list in tracks.items():
                     print("\n{:^50}".format( name.title() + ": " + mode.title()))
                     if(not opts.pretty):
                         print('{:^6} {:<33} {:^9}'.format('Rank', 'Player', 'Score' if timed else 'Score'))
-                        lookup_board('233610', val, int(opts.count), parseTime=timed)
+                        lookup_board(get_key(opts.key_path), '233610', val, int(opts.count), parseTime=timed)
                         # Flush print buffer after each board
                         print('', flush=True, end='')
                     else:
                         print('┌──────┬──────────────────────────────────┬──────────┐')
                         print('│{:^6}│ {:<33}│{:^9} │'.format('Rank', 'Player', 'Score' if timed else 'Score'))
                         print('├──────┼──────────────────────────────────┼──────────┤')
-                        lookup_board('233610', val, int(opts.count), parseTime=timed)
+                        lookup_board(get_key(opts.key_path), '233610', val, int(opts.count), parseTime=timed)
                         # Flush print buffer after each board
                         print('└──────┴──────────────────────────────────┴──────────┘', flush=True)
                     break
