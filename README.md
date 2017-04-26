@@ -2,7 +2,7 @@
 
 pylight: highlights each provided string in a seperate color
 
-leaderboard: gets the current Steam leaderboards for Distance using xml parsing
+leaderboard: gets the current Steam leaderboards for Distance using xml parsing. **Currently broken as Steam is deprecating their community xml pages**
 
 leaderboard.old: old version of leaderboard, gets the current Steam leaderboards for Distance using html parsing
 
