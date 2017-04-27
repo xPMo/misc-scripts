@@ -115,14 +115,17 @@ parser.add_option("-m", "--mode", action="store", default=".", dest="mode", help
 # parser.add_option("-g","--game-id", action="store", default='233610', dest="gameid", help="Game id to be used. Defaults to Distance. (You can try if you want.)")
 parser.add_option("-n", "--number", action="store", default=15, dest="count", help="Number of places to print. Views top 15 by default")
 parser.add_option("-s", "--simple", action="store_false", default=True, dest="pretty", help="Disable pretty box drawings")
-parser.add_option("-k", "--key-path", action="store", default=(os.environ['HOME'] + "/.local/share/steamapikey"), dest="key_path", help="Path to Steam API key. ~/.local/steam/steamapikey by default")
+parser.add_option("-f", "--key-file", action="store", default=(os.environ['HOME'] + "/.local/share/steamapikey"), dest="key_path", help="Path to Steam API key. ~/.local/steam/steamapikey by default")
+parser.add_option("-k", "--key", action="store", dest="key", help="Steam API key")
 (opts, args) = parser.parse_args()
 
 # Main loop
 threads = []
 titles = []
 tables = []
-key = get_key(opts.key_path)
+key = opts.key
+if key is None:
+    key = get_key(opts.key_path)
 
 for mode, track_list in tracks.items():
     # limit mode to the mode requested

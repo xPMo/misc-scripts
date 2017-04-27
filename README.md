@@ -2,7 +2,7 @@
 
 pylight: highlights each provided string in a seperate color
 
-leaderboard: gets the current Steam leaderboards for Distance using xml parsing. Requires a Steam API key in ~/.local/share/steamapikey or in a provided file by the `-k` flag 
+leaderboard: gets the current Steam leaderboards for Distance using xml parsing. Requires a Steam API key in `~/.local/share/steamapikey`, in a provided file by the `-f` flag, or directly with the `-k` flag.
 
 leaderboard.old: old version of leaderboard, gets the current Steam leaderboards for Distance using html parsing
 
