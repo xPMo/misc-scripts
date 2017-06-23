@@ -32,7 +32,9 @@ tracks = {
         "grinder": "1558800",
         "descent": "1558836",
         "detached": "1558817",
-        "elevation": "1558823"
+        "elevation": "1558823",
+        "red heat": "2011155",
+        "disassembly line": "2011156"
     },
     "stunt": {
         "credits": "1588771",
@@ -40,7 +42,8 @@ tracks = {
         "space skate": "1561263",
         "spooky town": "1573802",
         "stunt playground": "1561573",
-        "tagtastic": "1572280"
+        "tagtastic": "1572280",
+        "neon park": "1952913"
     }
 }
 def get_key(path):
