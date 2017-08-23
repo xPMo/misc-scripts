@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
 from optparse import OptionParser
-import xml.etree.ElementTree as ET
-import os
-import re
-import urllib.request
+from os import environ
+from re import search
 from threading import Thread
-import unicodedata
+from unicodedata import  category
+from urllib.request import urlopen
+from xml.etree.ElementTree import parse as parse_tree
 
 # Track IDs for Distance
 tracks = {
@@ -60,8 +60,8 @@ def lookup_board(key, gameid, levelid, count, parsetime, table):
     """
     url = 'http://steamcommunity.com/stats/' + gameid + '/leaderboards/' + levelid + '/?xml=1&start=1&end=' + str(count)
     # Make the request object
-    req = urllib.request.urlopen(url)
-    xml_tree = ET.parse(req)
+    req = urlopen(url)
+    xml_tree = parse_tree(req)
     root = xml_tree.getroot()
 
     for entry in root.find('entries').findall('entry'):
@@ -87,8 +87,8 @@ def lookup_steamids(key, table):
     for row in table:
         steamids.append(row['steamid'])
     url = 'https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=' + key + '&steamids=' + ','.join(steamids) + '&format=xml'
-    req = urllib.request.urlopen(url)
-    xml_tree = ET.parse(req)
+    req = urlopen(url)
+    xml_tree = parse_tree(req)
     root = xml_tree.getroot()[0]
     for child in root:
         uname = child.find('personaname').text
@@ -103,7 +103,7 @@ def nonspacing_count(s):
     """Counts the number of 'Nonspacing_Mark' characters in a string 's'"""
     count = 0
     for c in s:
-        if unicodedata.category(c) == 'Mn':
+        if category(c) == 'Mn':
             count += 1
     return count
 
@@ -118,7 +118,7 @@ parser.add_option("-m", "--mode", action="store", default=".", dest="mode", help
 # parser.add_option("-g","--game-id", action="store", default='233610', dest="gameid", help="Game id to be used. Defaults to Distance. (You can try if you want.)")
 parser.add_option("-n", "--number", action="store", default=15, dest="count", help="Number of places to print. Views top 15 by default")
 parser.add_option("-s", "--simple", action="store_false", default=True, dest="pretty", help="Disable pretty box drawings")
-parser.add_option("-f", "--key-file", action="store", default=(os.environ['HOME'] + "/.local/share/steamapikey"), dest="key_path", help="Path to Steam API key. ~/.local/steam/steamapikey by default")
+parser.add_option("-f", "--key-file", action="store", default=(environ['HOME'] + "/.local/share/steamapikey"), dest="key_path", help="Path to Steam API key. ~/.local/steam/steamapikey by default")
 parser.add_option("-k", "--key", action="store", dest="key", help="Steam API key")
 (opts, args) = parser.parse_args()
 
@@ -126,17 +126,15 @@ parser.add_option("-k", "--key", action="store", dest="key", help="Steam API key
 threads = []
 titles = []
 tables = []
-key = opts.key
-if key is None:
-    key = get_key(opts.key_path)
+key = opts.key if opts.key else get_key(opts.key_path)
 
 for mode, track_list in tracks.items():
     # limit mode to the mode requested
-    if re.search(opts.mode.lower(), mode):
+    if search(opts.mode.lower(), mode):
         for name, val in track_list.items():
             for arg in args:
                 # limit tracks to tracks requested
-                if re.search(arg.lower(), name):
+                if search(arg.lower(), name):
                     timed = True
                     if mode == 'stunt':
                         timed = False
@@ -148,7 +146,9 @@ for mode, track_list in tracks.items():
                     tables.append(table)
                     break
 
+# Print logic
 for thread, title, table in zip(threads, titles, tables):
+    # Print leaderboards as they are available
     thread.join()
     print(title)
     if(not opts.pretty):
