@@ -1,12 +1,22 @@
 #!/usr/bin/env python3
 
 from optparse import OptionParser
-from os import environ
+from os import environ, get_terminal_size
 from re import search
 from threading import Thread
 from unicodedata import  category
 from urllib.request import urlopen
 from xml.etree.ElementTree import parse as parse_tree
+
+def terminal_size(fallback=(80, 24)):
+    for i in range(0,3):
+        try:
+            columns, rows = get_terminal_size(i)
+        except OSError:
+            continue
+        break
+    else:  # set default if the loop completes which means all failed
+        columns, rows = fallback
 
 # Track IDs for Distance
 tracks = {
