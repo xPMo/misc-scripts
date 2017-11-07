@@ -53,7 +53,7 @@ for line in sys.stdin:
                 rebuilt_line += (line[last_match_end:m.start()]
                                  # if more matches than color, use the last available
                                  # color for all remaining matches
-                                 + color[i if num_colors > i else num_colors - 1]
+                                 + color[i if i < num_colors else num_colors - 1]
                                  + m.group()
                                  + reset_color)
                 matched = True
