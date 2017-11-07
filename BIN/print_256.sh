@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/data/data/com.termux/files/usr/bin/env sh
 o= i= x=`tput op` cols=`tput cols` y= oo= yy=;
 y=`printf %$(($cols-6))s`;
 yy=${y// /=};

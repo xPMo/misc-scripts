@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/data/data/com.termux/files/usr/bin/env bash
 # Update it all (apt/pkg/pacaur, $GIT/*)
 b=$(tput bold)
 n=$(tput sgr0)
