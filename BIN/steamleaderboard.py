@@ -8,15 +8,16 @@ from unicodedata import  category
 from urllib.request import urlopen
 from xml.etree.ElementTree import parse as parse_tree
 
-def terminal_size(fallback=(80, 24)):
-    for i in range(0,3):
+# terminal_size is not being used right now,
+# but I might later to set table width or print tables side-by-side
+def terminal_size():
+    if isatty(1):
         try:
-            columns, rows = get_terminal_size(i)
+            columns, rows = get_terminal_size(1)
         except OSError:
-            continue
-        break
-    else:  # set default if the loop completes which means all failed
-        columns, rows = fallback
+            return False
+        return (columns, rows)
+    return False
 
 # Track IDs for Distance
 tracks = {
@@ -56,11 +57,12 @@ tracks = {
         "neon park": "1952913"
     }
 }
-def get_key(path):
+
+def get_api_key(path):
     """Gets your Steam web API key from the path provided."""
     return open(path, 'r').read(32)
 
-def lookup_board(key, gameid, levelid, count, parsetime, table):
+def lookup_board(api_key, gameid, levelid, count, is_timed, table):
     """Look up a track on the steam leaderboard
 
     This function handles printing its data as well
@@ -79,15 +81,15 @@ def lookup_board(key, gameid, levelid, count, parsetime, table):
         rank = entry.find('rank').text
         steamid = entry.find('steamid').text
         score = entry.find('score').text
-        if parsetime:
+        if is_timed:
             minutes, milliseconds = divmod(int(score), 60000)
             seconds = float(milliseconds) / 1000
             score = "%i:%06.3f" % (minutes, seconds)
         table_row = {'rank' : rank, 'score' : score, 'steamid' : steamid}
         table.append(table_row)
-    lookup_steamids(key, table)
+    lookup_steamids(api_key, table)
 
-def lookup_steamids(key, table):
+def lookup_steamids(api_key, table):
     """Looks up a list of 64-bit steamids, makes an array of profile names
 
     Takes steamid (a numerical identifier)
@@ -96,9 +98,9 @@ def lookup_steamids(key, table):
     steamids = []
     for row in table:
         steamids.append(row['steamid'])
-    url = 'https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=' + key + '&steamids=' + ','.join(steamids) + '&format=xml'
-    req = urlopen(url)
-    xml_tree = parse_tree(req)
+    url = 'https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=' + api_key + '&steamids=' + ','.join(steamids) + '&format=xml'
+    request = urlopen(url)
+    xml_tree = parse_tree(request)
     root = xml_tree.getroot()[0]
     for child in root:
         uname = child.find('personaname').text
@@ -128,15 +130,15 @@ parser.add_option("-m", "--mode", action="store", default=".", dest="mode", help
 # parser.add_option("-g","--game-id", action="store", default='233610', dest="gameid", help="Game id to be used. Defaults to Distance. (You can try if you want.)")
 parser.add_option("-n", "--number", action="store", default=15, dest="count", help="Number of places to print. Views top 15 by default")
 parser.add_option("-s", "--simple", action="store_false", default=True, dest="pretty", help="Disable pretty box drawings")
-parser.add_option("-f", "--key-file", action="store", default=(environ['HOME'] + "/.local/share/steamapikey"), dest="key_path", help="Path to Steam API key. ~/.local/steam/steamapikey by default")
-parser.add_option("-k", "--key", action="store", dest="key", help="Steam API key")
+parser.add_option("-f", "--key-file", action="store", default=(environ['HOME'] + "/.local/share/steamapikey"), dest="api_key_path", help="Path to Steam API key. ~/.local/steam/steamapikey by default")
+parser.add_option("-k", "--key", action="store", dest="api_key", help="Steam API key")
 (opts, args) = parser.parse_args()
 
 # Main loop
 threads = []
 titles = []
 tables = []
-key = opts.key if opts.key else get_key(opts.key_path)
+api_key = opts.api_key if opts.api_key else get_api_key(opts.api_key_path)
 
 for mode, track_list in tracks.items():
     # limit mode to the mode requested
@@ -150,7 +152,7 @@ for mode, track_list in tracks.items():
                         timed = False
                     table = []
                     titles.append("\n{:^50}".format( name.title() + ": " + mode.title()))
-                    new_thread = Thread(target = lookup_board, args = (key, '233610', val, int(opts.count), timed, table))
+                    new_thread = Thread(target = lookup_board, args = (api_key, '233610', val, int(opts.count), timed, table))
                     new_thread.start()
                     threads.append(new_thread)
                     tables.append(table)
