@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Update it all (apt/pkg/pacaur, $GIT/*)
+IFS=$'\n'
+# assumes $GIT is a directory containing only git repos
 b=$(tput bold)
 n=$(tput sgr0)
 cr=$(tput cr)
