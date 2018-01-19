@@ -129,7 +129,7 @@ parser.usage = "%prog level [level2 [...]] [options] (level is a regular express
 parser.add_option("-m", "--mode", action="store", default=".", dest="mode", help="Mode to lookup. Searches all by default")
 # parser.add_option("-g","--game-id", action="store", default='233610', dest="gameid", help="Game id to be used. Defaults to Distance. (You can try if you want.)")
 parser.add_option("-n", "--number", action="store", default=15, dest="count", help="Number of places to print. Views top 15 by default")
-parser.add_option("-s", "--simple", action="store_false", default=True, dest="pretty", help="Disable pretty box drawings")
+parser.add_option("-s", "--simple", action="count", default=0, dest="strip", help="Disable pretty box drawings.  Repeat to strip column headings")
 parser.add_option("-f", "--key-file", action="store", default=(environ['HOME'] + "/.local/share/steamapikey"), dest="api_key_path", help="Path to Steam API key. ~/.local/steam/steamapikey by default")
 parser.add_option("-k", "--key", action="store", dest="api_key", help="Steam API key")
 (opts, args) = parser.parse_args()
@@ -151,7 +151,7 @@ for mode, track_list in tracks.items():
                     if mode == 'stunt':
                         timed = False
                     table = []
-                    titles.append("\n{:^50}".format( name.title() + ": " + mode.title()))
+                    titles.append("{:^50}".format( name.title() + ": " + mode.title()))
                     new_thread = Thread(target = lookup_board, args = (api_key, '233610', val, int(opts.count), timed, table))
                     new_thread.start()
                     threads.append(new_thread)
@@ -162,9 +162,12 @@ for mode, track_list in tracks.items():
 for thread, title, table in zip(threads, titles, tables):
     # Print leaderboards as they are available
     thread.join()
+    if opts.strip < 2:
+        print()
     print(title)
-    if(not opts.pretty):
-        print('{:^6} {:<33} {:^9}'.format('Rank', 'Player', 'Score' if timed else 'Score'))
+    if opts.strip > 0:
+        if opts.strip == 1:
+            print('{:^6} {:<33} {:^9}'.format('Rank', 'Player', 'Score' if timed else 'Score'))
         for row in table:
             uname_width = 33 + nonspacing_count(row['uname'])
             print("{:>5}  {:<{width}} {:>9}".format('#'+row['rank'], row['uname'], row['score'], width=uname_width))
