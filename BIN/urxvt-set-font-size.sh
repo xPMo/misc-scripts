@@ -4,4 +4,4 @@ if echo $1 | egrep -q '^[0-9]+(.5)?$'; then
 else
 	newfont=$(xrdb -query | grep 'urxvt\*font:' | cut -f 2-)
 fi
-echo -e "\033]710;$newfont\033\\"
+echo -ne "\033]710;$newfont\033\\"
