@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from colored import attr, bg
 from optparse import OptionParser
 from os import environ, get_terminal_size
 from re import search
@@ -18,6 +19,8 @@ def terminal_size():
             return False
         return (columns, rows)
     return False
+
+
 
 # Track IDs for Distance
 tracks = {
@@ -130,7 +133,7 @@ parser.add_option("-m", "--mode", action="store", default=".", dest="mode", help
 # parser.add_option("-g","--game-id", action="store", default='233610', dest="gameid", help="Game id to be used. Defaults to Distance. (You can try if you want.)")
 parser.add_option("-n", "--number", action="store", default=15, dest="count", help="Number of places to print. Views top 15 by default")
 parser.add_option("-s", "--simple", action="count", default=0, dest="strip", help="Disable pretty box drawings.  Repeat to strip column headings")
-parser.add_option("-f", "--key-file", action="store", default=(environ['HOME'] + "/.local/share/steamapikey"), dest="api_key_path", help="Path to Steam API key. ~/.local/steam/steamapikey by default")
+parser.add_option("-f", "--key-file", action="store", default=(environ['HOME'] + "/.local/share/steamapi/apikey"), dest="api_key_path", help="Path to Steam API key. ~/.local/steam/steamapi/apikey by default")
 parser.add_option("-k", "--key", action="store", dest="api_key", help="Steam API key")
 (opts, args) = parser.parse_args()
 
@@ -164,10 +167,13 @@ for thread, title, table in zip(threads, titles, tables):
     thread.join()
     if opts.strip < 2:
         print()
-    print(title)
+    if opts.strip < 3:
+        print("{}{}{}".format(attr(1), title, attr(0)))
+    else:
+        print(title)
     if opts.strip > 0:
         if opts.strip == 1:
-            print('{:^6} {:<33} {:^9}'.format('Rank', 'Player', 'Score' if timed else 'Score'))
+            print(' {}{:^5} {:<33} {:^9}{}'.format(attr(4), 'Rank', 'Player', 'Score' if timed else 'Score', attr(0)))
         for row in table:
             uname_width = 33 + nonspacing_count(row['uname'])
             print("{:>5}  {:<{width}} {:>9}".format('#'+row['rank'], row['uname'], row['score'], width=uname_width))
