@@ -68,7 +68,7 @@ def get_api_key(path):
 def lookup_board(api_key, gameid, levelid, count, is_timed, table):
     """Look up a track on the steam leaderboard
 
-    This function handles printing its data as well
+    This function handles formatting its data as well
 
     Takes a gameid, leaderboardid, count, and a table adds the top `count` entries
     in that leaderboard (calls lookup_steamid to get the profile name) to the table
@@ -133,15 +133,23 @@ parser.add_option("-m", "--mode", action="store", default=".", dest="mode", help
 # parser.add_option("-g","--game-id", action="store", default='233610', dest="gameid", help="Game id to be used. Defaults to Distance. (You can try if you want.)")
 parser.add_option("-n", "--number", action="store", default=15, dest="count", help="Number of places to print. Views top 15 by default")
 parser.add_option("-s", "--simple", action="count", default=0, dest="strip", help="Disable pretty box drawings.  Repeat to strip column headings")
-parser.add_option("-f", "--key-file", action="store", default=(environ['HOME'] + "/.local/share/steamapi/apikey"), dest="api_key_path", help="Path to Steam API key. ~/.local/steam/steamapi/apikey by default")
-parser.add_option("-k", "--key", action="store", dest="api_key", help="Steam API key")
+parser.add_option("-f", "--key-file", action="store", dest="api_key_path", help="Path to Steam API key. $XDG_DATA_HOME/steamapi/apikey by default")
+parser.add_option("-k", "--key", action="store", dest="api_key", help="Steam API key.  Overrides -f/--key-file")
 (opts, args) = parser.parse_args()
 
 # Main loop
 threads = []
 titles = []
 tables = []
-api_key = opts.api_key if opts.api_key else get_api_key(opts.api_key_path)
+api_key = opts.api_key
+if not api_key:
+    if opts.api_key_path:
+        api_key = get_api_key(opts.api_key_path)
+    else:
+        try:
+            api_key = get_api_key(environ['XDG_DATA_HOME'] + '/steamapi/apikey')
+        except:
+            api_key = get_api_key(environ['HOME'] + '/.local/share/steamapi/apikey')
 
 for mode, track_list in tracks.items():
     # limit mode to the mode requested
