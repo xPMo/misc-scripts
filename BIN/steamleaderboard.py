@@ -8,6 +8,7 @@ from threading import Thread
 from unicodedata import  category
 from urllib.request import urlopen
 from xml.etree.ElementTree import parse as parse_tree
+from matplotlib import pyplot, ticker
 
 # terminal_size is not being used right now,
 # but I might later to set table width or print tables side-by-side
@@ -61,6 +62,27 @@ tracks = {
     }
 }
 
+def format_time(score, *_):
+    minutes, milliseconds = divmod(int(score), 60000)
+    seconds = float(milliseconds) / 1000
+    return "%i:%06.3f" % (minutes, seconds)
+
+
+def plot_board(table, title, is_timed):
+    xs = []
+    ys = []
+    for row in table:
+        xs.append(int(row['rank']))
+        ys.append(int(row['score']))
+    fig = pyplot.figure(figsize=(12,8))
+    ax = fig.add_subplot(111)
+    if is_timed:
+        ax.yaxis.set_major_formatter(ticker.FuncFormatter(format_time))
+    ax.yaxis.grid(which='major', lw='1')
+    ax.plot(xs, ys)
+    ax.set_title(title)
+    fig.savefig('{}.png'.format(title))
+
 def get_api_key(path):
     """Gets your Steam web API key from the path provided."""
     return open(path, 'r').read(32)
@@ -85,33 +107,36 @@ def lookup_board(api_key, gameid, levelid, count, is_timed, table):
         steamid = entry.find('steamid').text
         score = entry.find('score').text
         if is_timed:
-            minutes, milliseconds = divmod(int(score), 60000)
-            seconds = float(milliseconds) / 1000
-            score = "%i:%06.3f" % (minutes, seconds)
+            score = format_time(score)
         table_row = {'rank' : rank, 'score' : score, 'steamid' : steamid}
         table.append(table_row)
-    lookup_steamids(api_key, table)
+    if not opts.plot:
+        lookup_steamids(api_key, table)
 
 def lookup_steamids(api_key, table):
     """Looks up a list of 64-bit steamids, makes an array of profile names
 
     Takes steamid (a numerical identifier)
     looks up and fetches the associated profile name
+
+    Max steamid count per lookup is 100
     """
-    steamids = []
-    for row in table:
-        steamids.append(row['steamid'])
-    url = 'https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=' + api_key + '&steamids=' + ','.join(steamids) + '&format=xml'
-    request = urlopen(url)
-    xml_tree = parse_tree(request)
-    root = xml_tree.getroot()[0]
-    for child in root:
-        uname = child.find('personaname').text
-        steamid = child.find('steamid').text
-        for row in table:
-            if row['steamid'] == steamid:
-                row['uname'] = "" if uname is None else uname
-                break
+    MAX = 100
+    for i in range(0, len(table), MAX):
+        steamids = []
+        for row in table[i:i+MAX]:
+            steamids.append(row['steamid'])
+        url = 'https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=' + api_key + '&steamids=' + ','.join(steamids) + '&format=xml'
+        request = urlopen(url)
+        xml_tree = parse_tree(request)
+        root = xml_tree.getroot()[0]
+        for child in root:
+            uname = child.find('personaname').text
+            steamid = child.find('steamid').text
+            for row in table:
+                if row['steamid'] == steamid:
+                    row['uname'] = "" if uname is None else uname
+                    break
     return table
 
 def nonspacing_count(s):
@@ -134,6 +159,7 @@ parser.add_option("-m", "--mode", action="store", default=".", dest="mode", help
 parser.add_option("-n", "--number", action="store", default=15, dest="count", help="Number of places to print. Views top 15 by default")
 parser.add_option("-s", "--simple", action="count", default=0, dest="strip", help="Disable pretty box drawings.  Repeat to strip column headings")
 parser.add_option("-f", "--key-file", action="store", dest="api_key_path", help="Path to Steam API key. $XDG_DATA_HOME/steamapi/apikey by default")
+parser.add_option("-p", "--plot", action="store_true", dest="plot", help="Plot the board instead.")
 parser.add_option("-k", "--key", action="store", dest="api_key", help="Steam API key.  Overrides -f/--key-file")
 (opts, args) = parser.parse_args()
 
@@ -141,6 +167,7 @@ parser.add_option("-k", "--key", action="store", dest="api_key", help="Steam API
 threads = []
 titles = []
 tables = []
+timings = []
 api_key = opts.api_key
 if not api_key:
     if opts.api_key_path:
@@ -158,21 +185,28 @@ for mode, track_list in tracks.items():
             for arg in args:
                 # limit tracks to tracks requested
                 if search(arg.lower(), name):
-                    timed = True
+                    is_timed = True
                     if mode == 'stunt':
-                        timed = False
+                        is_timed = False
+                    timings.append(is_timed)
                     table = []
-                    titles.append("{:^50}".format( name.title() + ": " + mode.title()))
-                    new_thread = Thread(target = lookup_board, args = (api_key, '233610', val, int(opts.count), timed, table))
+                    if opts.plot:
+                        is_timed = False
+                    titles.append(name.title() + ": " + mode.title())
+                    new_thread = Thread(target = lookup_board, args = (api_key, '233610', val, int(opts.count), is_timed, table))
                     new_thread.start()
                     threads.append(new_thread)
                     tables.append(table)
                     break
 
 # Print logic
-for thread, title, table in zip(threads, titles, tables):
+for thread, title, table, is_timed in zip(threads, titles, tables, timings):
     # Print leaderboards as they are available
     thread.join()
+    if opts.plot:
+        plot_board(table, title, is_timed)
+        continue
+    title = '{:^50}'.format(title)
     if opts.strip < 2:
         print()
     if opts.strip < 3:
@@ -181,7 +215,7 @@ for thread, title, table in zip(threads, titles, tables):
         print(title)
     if opts.strip > 0:
         if opts.strip == 1:
-            print(' {}{:^5} {:<33} {:^9}{}'.format(attr(4), 'Rank', 'Player', 'Score' if timed else 'Score', attr(0)))
+            print(' {}{:^5} {:<33} {:^9}{}'.format(attr(4), 'Rank', 'Player', 'Score' if is_timed else 'Score', attr(0)))
         for row in table:
             uname_width = 33 + nonspacing_count(row['uname'])
             print("{:>5}  {:<{width}} {:>9}".format('#'+row['rank'], row['uname'], row['score'], width=uname_width))
@@ -189,7 +223,7 @@ for thread, title, table in zip(threads, titles, tables):
         print('', flush=True, end='')
     else:
         print('┌──────┬──────────────────────────────────┬──────────┐')
-        print('│{:^6}│ {:<33}│{:^9} │'.format('Rank', 'Player', 'Score' if timed else 'Score'))
+        print('│{:^6}│ {:<33}│{:^9} │'.format('Rank', 'Player', 'Score' if is_timed else 'Score'))
         print('├──────┼──────────────────────────────────┼──────────┤')
         for row in table:
             uname_width = 33 + nonspacing_count(row['uname'])
