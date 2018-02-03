@@ -21,8 +21,6 @@ def terminal_size():
         return (columns, rows)
     return False
 
-
-
 # Track IDs for Distance
 tracks = {
     "sprint": {
@@ -62,6 +60,26 @@ tracks = {
     }
 }
 
+# UNUSED: Doesn't give mode, instead mode is part of
+# <display_name> (e.g.: "Amusement (Sprint)")
+# To adapt to any game, enable -g switch and use this
+# function to get boards for any appid
+def get_boards(api_key, appid):
+    boards = []
+    url = 'http://steamcommunity.com/stats/' + appid + '/leaderboards?xml=1'
+    # Make the request object
+    req = urlopen(url)
+    xml_tree = parse_tree(req)
+    root = xml_tree.getroot()
+    for board in root.find('leaderboard').findall('entry'):
+        # get relavent data out of 'leaderboard'
+        name = board.find('display_name')
+        id = board.find('lbid')
+        is_timed = (board.find('sortmethod') == '2')
+        board = {'name': name, 'id': id, 'is_timed': is_timed}
+        boards.append(board)
+    return boards
+
 def format_time(score, *_):
     minutes, milliseconds = divmod(int(score), 60000)
     seconds = float(milliseconds) / 1000
@@ -87,15 +105,15 @@ def get_api_key(path):
     """Gets your Steam web API key from the path provided."""
     return open(path, 'r').read(32)
 
-def lookup_board(api_key, gameid, levelid, count, is_timed, table):
+def lookup_board(api_key, appid, levelid, count, is_timed, table):
     """Look up a track on the steam leaderboard
 
     This function handles formatting its data as well
 
-    Takes a gameid, leaderboardid, count, and a table adds the top `count` entries
+    Takes a appid, leaderboardid, count, and a table adds the top `count` entries
     in that leaderboard (calls lookup_steamid to get the profile name) to the table
     """
-    url = 'http://steamcommunity.com/stats/' + gameid + '/leaderboards/' + levelid + '/?xml=1&start=1&end=' + str(count)
+    url = 'http://steamcommunity.com/stats/' + appid + '/leaderboards/' + levelid + '/?xml=1&start=1&end=' + str(count)
     # Make the request object
     req = urlopen(url)
     xml_tree = parse_tree(req)
@@ -122,11 +140,7 @@ def lookup_steamids(api_key, table):
     Max steamid count per lookup is 100
     """
     MAX = 100
-    for i in range(0, len(table), MAX):
-        steamids = []
-        for row in table[i:i+MAX]:
-            steamids.append(row['steamid'])
-        url = 'https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=' + api_key + '&steamids=' + ','.join(steamids) + '&format=xml'
+    def lookup_group(dest_table, url):
         request = urlopen(url)
         xml_tree = parse_tree(request)
         root = xml_tree.getroot()[0]
@@ -137,6 +151,17 @@ def lookup_steamids(api_key, table):
                 if row['steamid'] == steamid:
                     row['uname'] = "" if uname is None else uname
                     break
+    threads = []
+    for i in range(0, len(table), MAX):
+        steamids = []
+        for row in table[i:i+MAX]:
+            steamids.append(row['steamid'])
+        url = 'https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=' + api_key + '&steamids=' + ','.join(steamids) + '&format=xml'
+        new_thread = Thread(target = lookup_group, args = (table, url))
+        new_thread.start()
+        threads.append(new_thread)
+    for thread in threads:
+        thread.join()
     return table
 
 def nonspacing_count(s):
@@ -155,7 +180,7 @@ def nonspacing_count(s):
 parser = OptionParser()
 parser.usage = "%prog level [level2 [...]] [options] (level is a regular expression)"
 parser.add_option("-m", "--mode", action="store", default=".", dest="mode", help="Mode to lookup. Searches all by default")
-# parser.add_option("-g","--game-id", action="store", default='233610', dest="gameid", help="Game id to be used. Defaults to Distance. (You can try if you want.)")
+# parser.add_option("-g","--game-id", action="store", default='233610', dest="appid", help="Game id to be used. Defaults to Distance. (You can try if you want.)")
 parser.add_option("-n", "--number", action="store", default=15, dest="count", help="Number of places to print. Views top 15 by default")
 parser.add_option("-s", "--simple", action="count", default=0, dest="strip", help="Disable pretty box drawings.  Repeat to strip column headings")
 parser.add_option("-f", "--key-file", action="store", dest="api_key_path", help="Path to Steam API key. $XDG_DATA_HOME/steamapi/apikey by default")
@@ -163,11 +188,7 @@ parser.add_option("-p", "--plot", action="store_true", dest="plot", help="Plot t
 parser.add_option("-k", "--key", action="store", dest="api_key", help="Steam API key.  Overrides -f/--key-file")
 (opts, args) = parser.parse_args()
 
-# Main loop
-threads = []
-titles = []
-tables = []
-timings = []
+# Get API key
 api_key = opts.api_key
 if not api_key:
     if opts.api_key_path:
@@ -178,6 +199,15 @@ if not api_key:
         except:
             api_key = get_api_key(environ['HOME'] + '/.local/share/steamapi/apikey')
 
+# Lists to add
+# TODO: change to one list
+threads = []
+titles = []
+tables = []
+timings = []
+# ==============================
+# Select maps and launch threads
+# ==============================
 for mode, track_list in tracks.items():
     # limit mode to the mode requested
     if search(opts.mode.lower(), mode):
@@ -199,9 +229,10 @@ for mode, track_list in tracks.items():
                     tables.append(table)
                     break
 
-# Print logic
+# ======================
+# Join threads and print
+# ======================
 for thread, title, table, is_timed in zip(threads, titles, tables, timings):
-    # Print leaderboards as they are available
     thread.join()
     if opts.plot:
         plot_board(table, title, is_timed)
