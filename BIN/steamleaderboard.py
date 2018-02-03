@@ -5,7 +5,7 @@ from optparse import OptionParser
 from os import environ, get_terminal_size
 from re import search
 from threading import Thread
-from unicodedata import  category
+import unicodedata as u
 from urllib.request import urlopen
 from xml.etree.ElementTree import parse as parse_tree
 from matplotlib import pyplot, ticker
@@ -164,12 +164,16 @@ def lookup_steamids(api_key, table):
         thread.join()
     return table
 
-def nonspacing_count(s):
-    """Counts the number of 'Nonspacing_Mark' characters in a string 's'"""
+def strlen_adjust(s):
+    """Calculates the spaces that need to be added/removed from padding"""
     count = 0
     for c in s:
-        if category(c) == 'Mn':
+        if u.category(c) == 'Mn':
             count += 1
+        elif u.category(c) == 'Lo':
+            count -= 1
+        elif u.name(c).startswith('FULLWIDTH'):
+            count -= 1
     return count
 
 # ==================
@@ -248,7 +252,7 @@ for thread, title, table, is_timed in zip(threads, titles, tables, timings):
         if opts.strip == 1:
             print(' {}{:^5} {:<33} {:^9}{}'.format(attr(4), 'Rank', 'Player', 'Score' if is_timed else 'Score', attr(0)))
         for row in table:
-            uname_width = 33 + nonspacing_count(row['uname'])
+            uname_width = 33 + strlen_adjust(row['uname'])
             print("{:>5}  {:<{width}} {:>9}".format('#'+row['rank'], row['uname'], row['score'], width=uname_width))
         # Flush print buffer after each board
         print('', flush=True, end='')
@@ -257,7 +261,7 @@ for thread, title, table, is_timed in zip(threads, titles, tables, timings):
         print('│{:^6}│ {:<33}│{:^9} │'.format('Rank', 'Player', 'Score' if is_timed else 'Score'))
         print('├──────┼──────────────────────────────────┼──────────┤')
         for row in table:
-            uname_width = 33 + nonspacing_count(row['uname'])
+            uname_width = 33 + strlen_adjust(row['uname'])
             print("│{:>5} │ {:<{width}}│{:>9} │".format('#'+row['rank'], row['uname'], row['score'], width=uname_width))
         # Flush print buffer after each board
         print('└──────┴──────────────────────────────────┴──────────┘', flush=True)
