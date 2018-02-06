@@ -19,7 +19,7 @@ ix() {
             n) opts="$opts -F read:1=$OPTARG";;
         esac
     done
-    shift $(($OPTIND - 1))
+    shift $((OPTIND - 1))
     [ -t 0 ] && {
         local filename="$1"
         shift

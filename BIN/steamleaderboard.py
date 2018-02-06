@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-from colored import attr, bg
+from colored import attr
 from optparse import OptionParser
 from os import environ, get_terminal_size
 from re import search
 from threading import Thread
 from urllib.request import urlopen
-from xml.etree.ElementTree import parse as parse_tree
+from defusedxml.ElementTree import parse as parse_tree
 from matplotlib import pyplot, ticker
 
 # terminal_size is not being used right now,
@@ -73,9 +73,9 @@ def get_boards(api_key, appid):
     for board in root.find('leaderboard').findall('entry'):
         # get relavent data out of 'leaderboard'
         name = board.find('display_name')
-        id = board.find('lbid')
+        lbid = board.find('lbid')
         is_timed = (board.find('sortmethod') == '2')
-        board = {'name': name, 'id': id, 'is_timed': is_timed}
+        board = {'name': name, 'id': lbid, 'is_timed': is_timed}
         boards.append(board)
     return boards
 
@@ -83,7 +83,6 @@ def format_time(score, *_):
     minutes, milliseconds = divmod(int(score), 60000)
     seconds = float(milliseconds) / 1000
     return "%i:%06.3f" % (minutes, seconds)
-
 
 def plot_board(table, title, is_timed):
     xs = []
@@ -150,6 +149,7 @@ def lookup_steamids(api_key, table):
                 if row['steamid'] == steamid:
                     row['uname'] = "" if uname is None else uname
                     break
+
     threads = []
     for i in range(0, len(table), MAX):
         steamids = []
@@ -187,7 +187,7 @@ if not api_key:
     else:
         try:
             api_key = get_api_key(environ['XDG_DATA_HOME'] + '/steamapi/apikey')
-        except:
+        except KeyError:
             api_key = get_api_key(environ['HOME'] + '/.local/share/steamapi/apikey')
 
 # Lists to add
