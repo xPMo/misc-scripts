@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env python3
+#!/usr/bin/env python3
 
 from colored import attr
 from optparse import OptionParser

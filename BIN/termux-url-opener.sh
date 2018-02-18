@@ -11,6 +11,7 @@ case $y in
 		youtube-dl $1
 	;;
 	*)
+		echo "NOTE: the url provided to Termux is in \$1"
 		echo "Okay, you're in $(pwd), something to do first? [y/n]"
 		read y
 		while [$y != 'n' ]; do
