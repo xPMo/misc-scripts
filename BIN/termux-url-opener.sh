@@ -112,18 +112,12 @@ if [ -f $lock ]; then
 	exit 0
 fi
 
-# cleanup sets __exit, which stops all remaining $cmd from executing
-function cleanup {
-	echo "Will cleanup and exit."
-	__exit=1
-	return 0
-}
-
-trap cleanup SIGINT
+unset int
+trap 'int=1' SIGINT
 touch $lock
 remain=$(mktemp "$PREFIX/tmp/.url.queue.XXXXXX")
 while read cmd; do
-	if [ $__exit ]; then
+	if [ $int ]; then
 		echo $cmd >> $remain
 	else
 		eval $cmd || echo $cmd >> $remain
