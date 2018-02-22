@@ -2,8 +2,11 @@
 shopt -s dotglob
 if [[ -n $ANDROID_DATA ]]; then
 	link_by() {
-		echo Copying "$1 -> $2"
-		cp $1 $2; chmod +x $2
+		diff "$1" "$2" -q || (
+			echo Copying "$1 -> $2"
+			cp $1 $2
+			chmod +x $2
+		)
 	}
 else
 	link_by() {
@@ -14,6 +17,5 @@ fi
 cd BIN
 for file in * 
 do
-	echo $file
 	link_by $(pwd)/$file $HOME/.local/bin/${file%.*}
 done
