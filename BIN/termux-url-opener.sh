@@ -26,6 +26,8 @@ if (( ${+1} )); then
 	printf "$br%s\n" Y "outube-dl, add arguments"
 	read y
 	case $y in
+
+	# Default commands
 	w)
 		echo "cd $HOME/Downloads; wget --continue $1" >> $queue
 	;;
@@ -35,10 +37,12 @@ if (( ${+1} )); then
 	y)
 		echo "cd $HOME/Videos; youtube-dl $1" >> $queue
 	;;
+
+	# Fined-grained control
 	W)
 		_c="wget --continue"
 		_h="wget --help"
-		;&
+		;& # requires bash >=4.0
 	Y)
 		_c="youtube-dl"
 		_h="youtube-dl --help"
@@ -110,16 +114,23 @@ if [ -f $lock ]; then
 	exit 0
 fi
 
+success=0
+total=0
 unset _sig
 trap '_sig=1' SIGINT
 touch $lock
 remain=$(mktemp "$PREFIX/tmp/.url.queue.XXXXXX")
 while read line; do
 	if [ $_sig ]; then
+		# Don't run commands once signal recieved
 		echo $line >> $remain
+		(( total += 1 ))
 	else
-		eval $line || echo $line >> $remain
+		eval $line && (( success += 1 )) || echo $line >> $remain
+		(( total += 1 ))
 	fi
 done < $queue
 mv $remain $queue
 rm $lock
+# Notify user of $queue status
+termux-notification --title "URLs processed: $success/$total" --id url --content "Remaining:\n\n$(cat $queue)"
