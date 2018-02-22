@@ -8,17 +8,15 @@ function get_f {
 	read y
 	if (( ${+y} )); then
 		eval $y=$(locate '*' | fzf)
-		eval __temp="\$$y"
-		echo "$y has been set to $__temp"
+		eval _tmp="\$$y"
+		echo "$y has been set to $_tmp"
 	else
 		echo -n "No variable name given."
 	fi
 }
-
 function get_d {
 	cd $(find -L / -mindepth 1 \( -path '*/\\.*' -o -fstype 'sysfs' -o -fstype 'devfs' -o -fstype 'devtmpfs' \) -prune -o -type d -print | fzf)
 }
-
 
 if (( ${+1} )); then
 	printf "$br%s\n" w "get"
@@ -28,6 +26,8 @@ if (( ${+1} )); then
 	printf "$br%s\n" Y "outube-dl, add arguments"
 	read y
 	case $y in
+
+	# Default commands
 	w)
 		echo "cd $HOME/Downloads; wget --continue $1" >> $queue
 	;;
@@ -37,38 +37,40 @@ if (( ${+1} )); then
 	y)
 		echo "cd $HOME/Videos; youtube-dl $1" >> $queue
 	;;
+
+	# Fined-grained control
 	W)
-		help="wget --help"
-		cmd="wget --continue"
-		;&
+		_c="wget --continue"
+		_h="wget --help"
+		;& # requires bash >=4.0
 	Y)
-		help="youtube-dl --help"
-		cmd="youtube-dl"
+		_c="youtube-dl"
+		_h="youtube-dl --help"
 		;&
 	*)
 		function print_opts {
-			(( ${+help} )) && printf "%s$br%s\n" "get " h "elp"
+			(( ${+_h} )) && printf "%s$br%s\n" "get $_c " h "elp"
 			printf "%s$br%s\n" "print this " H "elp"
 			printf "%s$br%s\n" "specify " p "ath"
 			printf "%s$br%s\n" "make new " F "ile"
 			printf "%s$br%s\n" "specify " d "irectory to run command in"
 			printf "%s$br%s\n" "make new " D "irectory"
-			print -n "    (currently "; print -rDn $PWD; print ")"
 			printf "%s$br%s\n" "provide " a "rguments"
-			echo -e "\nAvoid setting \$cmd, \$help, \$br, \$y, \$queue, \$lock, or \$__temp"
+			echo -e "\nAvoid setting _c, _h, br, y, queue, lock, _tmp"
+			print -rD $PWD
 		}
-		if [[ ! -n $cmd ]]; then
+		if [[ ! -n $_c ]]; then
 			echo "Specify command to run:"
-			read cmd
-			echo "What is the help command for $cmd?"
-			read help
+			read _c
+			echo "What is the help command for $_c?"
+			read _h
 		fi
 		print_opts
 		while [[ $y != "a" ]]; do
 			read y
 			case $y in
 			h)
-				eval $help
+				eval $_h
 				;;
 			H)
 				print_opts
@@ -77,7 +79,7 @@ if (( ${+1} )); then
 				get_f
 				;;
 			F)
-				echo -n "touch "; print -rDn $PWD; echo -n "/"
+				echo -n "touch "
 				read y
 				touch $y
 				;;
@@ -85,7 +87,7 @@ if (( ${+1} )); then
 				get_d
 				;;
 			D)
-				echo -n "mkdir "; print -rDn $PWD; echo -n "/"
+				echo -n "mkdir -p"
 				read y
 				mkdir $y
 				;;
@@ -94,7 +96,7 @@ if (( ${+1} )); then
 		unset y
 		clear
 		while
-			eval $help
+			eval $_h
 			[[ ! -n $y ]]
 		do
 			echo -n "In "; print -rD $PWD
@@ -102,7 +104,7 @@ if (( ${+1} )); then
 			read y
 		done
 		args=$(echo $y | envsubst)
-		echo "cd $PWD; $cmd $args" >> $queue
+		echo "cd $PWD; $_c $args" >> $queue
 		;;
 	esac
 fi
@@ -112,16 +114,23 @@ if [ -f $lock ]; then
 	exit 0
 fi
 
-unset int
-trap 'int=1' SIGINT
+success=0
+total=0
+unset _sig
+trap '_sig=1' SIGINT
 touch $lock
 remain=$(mktemp "$PREFIX/tmp/.url.queue.XXXXXX")
-while read cmd; do
-	if [ $int ]; then
-		echo $cmd >> $remain
+while read line; do
+	if [ $_sig ]; then
+		# Don't run commands once signal recieved
+		echo $line >> $remain
+		(( total += 1 ))
 	else
-		eval $cmd || echo $cmd >> $remain
+		eval $line && (( success += 1 )) || echo $line >> $remain
+		(( total += 1 ))
 	fi
 done < $queue
 mv $remain $queue
 rm $lock
+# Notify user of $queue status
+termux-notification --title "URLs processed: $success/$total" --id url --content "Remaining:\n\n$(cat $queue)"
