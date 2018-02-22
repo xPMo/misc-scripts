@@ -29,13 +29,13 @@ if (( ${+1} )); then
 
 	# Default commands
 	w)
-		echo "cd $HOME/Downloads; wget --continue $1" >> $queue
+		echo "cd $HOME/Downloads; wget --continue \"$1\"" >> $queue
 	;;
 	x)
-		echo "cd $HOME/Music/youtube-dl; youtube-dl -x $1" >> $queue
+		echo "cd $HOME/Music/youtube-dl; youtube-dl -x \"$1\"" >> $queue
 	;;
 	y)
-		echo "cd $HOME/Videos; youtube-dl $1" >> $queue
+		echo "cd $HOME/Videos; youtube-dl \"$1\"" >> $queue
 	;;
 
 	# Fined-grained control
@@ -116,12 +116,12 @@ fi
 
 success=0
 total=0
-unset _sig
-trap '_sig=1' SIGINT
+unset sig
+trap 'sig=1' SIGINT
 touch $lock
 remain=$(mktemp "$PREFIX/tmp/.url.queue.XXXXXX")
 while read line; do
-	if [ $_sig ]; then
+	if [ $sig ]; then
 		# Don't run commands once signal recieved
 		echo $line >> $remain
 		(( total += 1 ))
@@ -133,4 +133,12 @@ done < $queue
 mv $remain $queue
 rm $lock
 # Notify user of $queue status
-termux-notification --title "URLs processed: $success/$total" --id url --content "Remaining:\n\n$(cat $queue)"
+#
+if  ((success == total )); then 
+	termux-notification --id url --title "Termux URL Opener | Termux:API" \
+		--content "All URLs processed successfully. ($total/$total)"
+else
+	termux-notification --id url --title "Termux URL Opener | Termux:API" \
+		--content "Results: $success/$total" \
+		--button1 "Try again" --button1-action "$0"
+fi
