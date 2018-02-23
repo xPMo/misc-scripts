@@ -32,13 +32,16 @@ if (( ${+1} )); then
 		echo "cd $HOME/Downloads; wget --continue \"$1\"" >> $queue
 	;;
 	x)
-		echo "cd $HOME/Music/youtube-dl; youtube-dl -x \"$1\"" >> $queue
+		echo "cd $HOME/Music/youtube-dl; youtube-dl -x \"$1\" | sed -e 's/\[download\]//" >> $queue
 	;;
 	y)
-		echo "cd $HOME/Videos; youtube-dl \"$1\"" >> $queue
+		echo -n "cd $HOME/Videos; youtube-dl \"$1\" | sed -e 's/\[download\]//" >> $queue
 	;;
 
-	# Fined-grained control
+	# Fined-grained control:
+	# _c=<command>
+	# _h=<command help>
+	# _a=<after command>
 	W)
 		_c="wget --continue"
 		_h="wget --help"
@@ -46,6 +49,7 @@ if (( ${+1} )); then
 	Y)
 		_c="youtube-dl"
 		_h="youtube-dl --help"
+		_a='| sed -e "s/\[download\]//"'
 		;&
 	*)
 		function print_opts {
@@ -104,7 +108,7 @@ if (( ${+1} )); then
 			read y
 		done
 		args=$(echo $y | envsubst)
-		echo "cd $PWD; $_c $args" >> $queue
+		echo "cd $PWD; $_c $args $_a" >> $queue
 		;;
 	esac
 fi
