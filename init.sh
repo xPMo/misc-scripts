@@ -8,13 +8,15 @@ if [[ -n $ANDROID_DATA ]]; then
 			chmod +x $2
 		)
 	}
+	for file in termux-BIN/*; do
+		link_by $(pwd)/$file $HOME/.local/bin/${file%.*}
+	done
 else
 	link_by() {
 		echo "Creating link $2 -> $1"
 		ln -s $1 $2
 	}
 fi
-cd BIN
-for file in *; do
+for file in BIN/*; do
 	link_by $(pwd)/$file $HOME/.local/bin/${file%.*}
 done
