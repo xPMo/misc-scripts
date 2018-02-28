@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/zsh
+#!/usr/bin/env zsh
 br="\033[1;31m%s\033[0m"
 lock="$PREFIX/tmp/.url.queue.lock"
 queue="$HOME/url.queue"

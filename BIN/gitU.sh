@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/env bash
+#!/usr/bin/env bash
 # Update it all (apt/pkg/pacaur, $GIT/*)
 IFS=$'\n'
 # assumes $GIT is a directory containing only git repos
