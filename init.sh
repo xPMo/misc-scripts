@@ -17,6 +17,8 @@ else
 		ln -s $1 $2
 	}
 fi
-for file in BIN/*; do
+cd BIN
+for file in *; do
 	link_by $(pwd)/$file $HOME/.local/bin/${file%.*}
 done
+cd ..
