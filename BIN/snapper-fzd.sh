@@ -7,6 +7,7 @@ Begin with <query>
 If only a positive number is passed, diff <index> with 0.
 If only a negative number is passed, diff <nth-most-recent> with 0.
 If [a-z]\"<n>\" is passed, diff the nth-most recent pre-post pair."
+
 if [ "$#" -eq 0 ]; then
 	echo "$USAGE"
 	exit 1
@@ -29,12 +30,12 @@ else
 fi
 
 IFS=$'\n'
-red=$(echo -e "\033[31m")
-grn=$(echo -e "\033[32m")
-blu=$(echo -e "\033[34m")
-bred=$(echo -e "\033[31;1m")
-bgrn=$(echo -e "\033[32;1m")
-res=$(echo -e "\033[0m")
+red=$'\033[31m'
+grn=$'\033[32m'
+blu=$'\033[34m'
+bred=$'\033[31;1m'
+bgrn=$'\033[32;1m'
+res=$'\033[0m'
 snapper status "$s" | grep "^c....*" | cut -f2- -d ' ' | \
 	fzf $FZF_DEFAULT_OPTS --query="${2:-""}" --multi --ansi --preview \
 		"snapper diff $s {+} \
