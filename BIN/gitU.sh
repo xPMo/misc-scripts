@@ -6,7 +6,7 @@ n=$(tput sgr0)
 cr=$(tput cr)
 for dir in $GIT/*; do
 	cd "$dir"
-	git pull 2> /dev/null | sed "s/\(Already\|remote\)/$cr$b${dir##*/}$n/" &
+	git pull --recurse-submodules=on-demand 2> /dev/null | sed "s/\(Already\|remote\)/$cr$b${dir##*/}$n/" &
 done
 wait 
 
