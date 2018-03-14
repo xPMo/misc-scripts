@@ -1,6 +1,6 @@
-#!/usr/bin/env zsh
+#!/data/data/com.termux/files/usr/bin/zsh
 br="\033[1;31m%s\033[0m"
-lock="$PREFIX/tmp/.url.queue.lock"
+lock="${PREFIX:-/data/data/com.termux/files/usr}/tmp/.url.queue.lock"
 queue="$HOME/url.queue"
 
 function get_f {
@@ -32,16 +32,13 @@ if (( ${+1} )); then
 		echo "cd $HOME/Downloads; wget --continue \"$1\"" >> $queue
 	;;
 	x)
-		echo "cd $HOME/Music/youtube-dl; youtube-dl -x \"$1\" | sed -e 's/\[download\]//" >> $queue
+		echo "cd $HOME/Music/youtube-dl; youtube-dl -x \"$1\"" >> $queue
 	;;
 	y)
-		echo -n "cd $HOME/Videos; youtube-dl \"$1\" | sed -e 's/\[download\]//" >> $queue
+		echo "cd $HOME/Videos; youtube-dl \"$1\"" >> $queue
 	;;
 
-	# Fined-grained control:
-	# _c=<command>
-	# _h=<command help>
-	# _a=<after command>
+	# Fined-grained control
 	W)
 		_c="wget --continue"
 		_h="wget --help"
@@ -49,7 +46,6 @@ if (( ${+1} )); then
 	Y)
 		_c="youtube-dl"
 		_h="youtube-dl --help"
-		_a='| sed -e "s/\[download\]//"'
 		;&
 	*)
 		function print_opts {
@@ -108,7 +104,7 @@ if (( ${+1} )); then
 			read y
 		done
 		args=$(echo $y | envsubst)
-		echo "cd $PWD; $_c $args $_a" >> $queue
+		echo "cd $PWD; $_c $args" >> $queue
 		;;
 	esac
 fi
