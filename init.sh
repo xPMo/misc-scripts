@@ -13,8 +13,13 @@ if [[ -n $ANDROID_DATA ]]; then
 	done
 else
 	link_by() {
-		echo "Creating link $2 -> $1"
-		ln -s $1 $2
+		[ -L "$2" ] && return
+		if [ -f "$2" ]; then
+			echo "$2 exists and is not a symlink. Linking to $2.new"
+			ln -s "$1" "$2.new"
+		else
+			ln -s "$1" "$2"
+		fi
 	}
 fi
 cd BIN
