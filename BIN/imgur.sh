@@ -26,8 +26,8 @@ function usage {
 # > fallback to ~/.imgur
 if [[ -n "${IMGUR_CLIENT_ID:-}" ]]; then
 	client_id="$IMGUR_CLIENT_ID"
-elif [[ -f "${XDG_DATA_DIR:-$HOME.local/share}/imgur/client.id" ]]; then
-	read client_id < "${XDG_DATA_DIR:-$HOME.local/share}/imgur/client.id"
+elif [[ -f "${XDG_DATA_DIR:-$HOME/.local/share}/imgur/client.id" ]]; then
+	read client_id < "${XDG_DATA_DIR:-$HOME/.local/share}/imgur/client.id"
 elif [[ -f "$HOME/.imgur/client.id" ]]; then
 	read client_id < "$HOME/.imgur/client.id"
 elif [[ -f "$HOME/.imgur" ]]; then
