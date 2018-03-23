@@ -8,15 +8,17 @@
 
 # Function to output usage instructions
 function usage {
-	echo "Usage: $(basename $0) [<filename|URL> [...]]" >&2
-	echo
-	echo "Upload images to imgur and output their new URLs to stdout. Each one's" >&2
-	echo "delete page is output to stderr between the view URLs." >&2
-	echo
-	echo "A filename can be - to read from stdin. If no filename is given, stdin is read." >&2
-	echo
-	echo "If xsel, xclip, or pbcopy is available, the URLs are put on the X selection for" >&2
-	echo "easy pasting." >&2
+cat >&2 << EOF
+Usage: $(basename $0) [<filename|URL> [...]]
+
+Upload images to imgur and output their new URLs to stdout. Each one's
+delete page is output to stderr between the view URLs.
+
+A filename can be - to read from stdin. If no filename is given, stdin is read.
+
+If xsel, xclip, or pbcopy is available, the URLs are put on the X selection for
+easy pasting. If xdg-open is available, the URL is opened.
+EOF
 }
 
 # API key read IMGUR_CLIENT_ID env variable
@@ -26,8 +28,8 @@ function usage {
 # > fallback to ~/.imgur
 if [[ -n "${IMGUR_CLIENT_ID:-}" ]]; then
 	client_id="$IMGUR_CLIENT_ID"
-elif [[ -f "${XDG_DATA_DIR:-$HOME.local/share}/imgur/client.id" ]]; then
-	read client_id < "${XDG_DATA_DIR:-$HOME.local/share}/imgur/client.id"
+elif [[ -f "${XDG_DATA_DIR:-$HOME/.local/share}/imgur/client.id" ]]; then
+	read client_id < "${XDG_DATA_DIR:-$HOME/.local/share}/imgur/client.id"
 elif [[ -f "$HOME/.imgur/client.id" ]]; then
 	read client_id < "$HOME/.imgur/client.id"
 elif [[ -f "$HOME/.imgur" ]]; then
@@ -114,6 +116,9 @@ done
 if type pbcopy &>/dev/null; then
 	echo -n "$clip" | pbcopy
 elif [ $DISPLAY ]; then
+	if type xdg-open &>/dev/null; then
+		xdg-open $url
+	fi
 	if type xsel &>/dev/null; then
 		echo -n "$clip" | xsel -i
 	elif type xclip &>/dev/null; then
