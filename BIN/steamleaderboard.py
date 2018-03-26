@@ -2,12 +2,89 @@
 
 from colored import attr
 from optparse import OptionParser
+from enum import Enum
 from os import environ, get_terminal_size
 from re import search
 from threading import Thread
 from urllib.request import urlopen
 from defusedxml.ElementTree import parse as parse_tree
 from matplotlib import pyplot, ticker
+
+class Board:
+    """board: Steam leaderboard from a given game id + board id
+
+    displaytype: 1 for points, 2 for ???, 3 for time
+    sortmethod: 1 for lowest best, 2 for highest best
+    """
+    def __init__(self, appid, lbid, title="", displaytype=3, sortmethod=1):
+        self.displaytype = displaytype
+        self.gameid = gameid
+        self.lbid = lbid
+        self.sortmethod = sortmethod
+        self.title = title
+
+    """GET the board's first `count` entries"""
+    def fetch(self, count, apikey, usernames=True, steamiddb=None):
+        return fetch_entries(self, 1, count, apikey, usernames=usernames)
+
+    """GET the board's first entries between `start` and `end`"""
+    def fetch_entries(self, start, end, apikey, usernames=True):
+        url = 'http://steamcommunity.com/stats/' + appid + '/leaderboards/' + levelid + '/?xml=1&start=' + str(start) '&end=' + str(end)
+        # Make the request object
+        req = urlopen(url)
+        xml_tree = parse_tree(req)
+        root = xml_tree.getroot()
+
+        for entry in root.find('entries').findall('entry'):
+            # get relavent data out of 'entry'
+            rank = entry.find('rank').text
+            steamid = entry.find('steamid').text
+            score = entry.find('score').text
+            if is_timed:
+                score = format_time(score)
+            table_row = {'rank' : rank, 'score' : score, 'steamid' : steamid}
+            table.append(table_row)
+        if usernames:
+            lookup_steamids(self, api_key, steamiddb)
+
+    def lookup_steamids(self, api_key, steamiddb):
+
+
+    def add_steamids(self, api_key, steamiddb)
+
+        def match_steamid(steamid, username, table):
+            for row in table:
+                if steamid == row['steamid']
+                    row['uname'] = username
+                    return True
+            return False
+
+        if steamiddb:
+            for (sid, uname) in steamiddb:
+                match_steamid(sid, uname, table)
+
+
+    def print(self, style=3):
+        pass
+
+    """returns a list of Boards for this appid"""
+    def get_boards(appid):
+        boards = []
+        url = 'http://steamcommunity.com/stats/' + appid + '/leaderboards?xml=1'
+        # Make the request object
+        req = urlopen(url)
+        xml_tree = parse_tree(req)
+        root = xml_tree.getroot()
+        for board in root.find('leaderboard').findall('entry'):
+            # get relavent data out of 'leaderboard'
+            name = board.find('display_name')
+            sortmethod = board.find('sortmethod')
+            displaytype = board.find('displaytype')
+            lbid = board.find('lbid')
+            board = Board(appid, lbid, title=display_name,
+                          sortmethod=sortmethod, displaytype=displaytype)
+            boards.append(board)
+        return boards
 
 # terminal_size is not being used right now,
 # but I might later to set table width or print tables side-by-side
