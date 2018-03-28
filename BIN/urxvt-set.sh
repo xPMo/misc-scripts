@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 function usage {
-	echo "$0 [ option [ value ]]
+	cat >&2 <<- EOF
+$(basename $0) [ option [ value ]]
 
 Uses escape codes to set urxvt settings. Settings must exist
 in \`xrdb -query\`.  If no value is provided, setting is set
@@ -9,7 +10,7 @@ to xresources default.
 	-o --opacity	sets the opacity of the terminal background
 	-f --font   	sets the size of the terminal font
 	-h --help   	print this help
-	"
+EOF
 }
 function urxvt-set {
 	local val
