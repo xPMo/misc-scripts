@@ -53,20 +53,20 @@ EOF
 function debug {
 	unset head
 	(( verbose < $1 )) && return
-	(( verbose > 5 )) && head=$"\e[38;1mDEBUG[${1}]: " >&2
+	(( verbose > 5 )) && head="\e[38;1mDEBUG[${1}]: " >&2
 	case $1 in
-		0 ) code=$"\e[38;1m"   ;; # bold
-		1 ) code=$"\e[38;0m"   ;; # normal
-		2 ) code=$"\e[38;5;6m" ;; # cyan
-		3 ) code=$"\e[38;5;7m" ;; # faint
-		* ) code=$"\e[38;5;8m" ;; # fainter
+		0 ) code='\e[38;1m'   ;; # bold
+		1 ) code='\e[38;0m'   ;; # normal
+		2 ) code='\e[38;5;6m' ;; # cyan
+		3 ) code='\e[38;5;7m' ;; # faint
+		* ) code='\e[38;5;8m' ;; # fainter
 	esac
 	echo -e "${code}${head}${2}\e[0m" >&2
 }
 
 function list_offspring {
 	tp=$(ps -o pid:1= --ppid $1)
-	debug 4 "Getting offspring: $tp"
+	debug 5 "Getting offspring: $tp"
 	for i in $tp; do
 		if [ -z $i ]; then
 			exit
@@ -95,21 +95,21 @@ function pidtree {
 
 
 function limit_pid {
-	debug 1 "Limiting process with pid $1"
+	debug 2 "Limiting process with pid $1"
 	while state=$( ps -p "$1" -o state= ); do
 		temp=$(( $(sensors -u $chip | sed -n '/input/{s/.*input: \(.*\)\..*/\1/p; q}' ) ))
-		debug 2 "Temperature:   $temp"
-		debug 3 "Process state: $state"
+		debug 3 "Temperature:   $temp"
+		debug 4 "Process state: $state"
 		case $state in
 		[DRS] ) # running
 			if (( temp > TEMPLIMIT_MAX )); then
-				debug 1 "Temperature at $temp, sending SIGSTOP to $1"
+				debug 2 "Temperature at $temp, sending SIGSTOP to $1"
 				kill -SIGSTOP $1 $(list_offspring $1)
 			fi
 			;;
 		[T] ) # stopped
 			if (( temp < TEMPLIMIT_MIN )); then
-				debug 1 "Temperature at $temp, sending SIGCONT to $1"
+				debug 2 "Temperature at $temp, sending SIGCONT to $1"
 				kill -SIGCONT $1 $(list_offspring $1)
 			fi
 			;;
@@ -118,17 +118,17 @@ function limit_pid {
 		esac
 		sleep $interval
 	done
-	debug 1 "Process $1 has exited."
+	debug 2 "Process $1 has exited."
 }
 
 function try_execute {
 
 	command -v "$1" > /dev/null 2>&1 || {
-		echo "Could not find command $1" >&2
+		debug 1 "Could not find command $1"
 		return 1
 	}
 
-	(( ${exec_fg:-0} = 1 )) && {
+	(( ${exec_fg:-0} == 1 )) && {
 		# enable job control
 		set -m
 		eval "$@" > /dev/null &
@@ -146,7 +146,7 @@ function try_execute {
 
 function try_limit_pid {
 	ps -p "$1" > /dev/null 2>&1 || {
-		echo -e "Could not find process with pid $1" >&2
+		debug 1 "Could not find process with pid $1"
 		return 1
 	}
 	limit_pid $1
