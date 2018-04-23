@@ -9,7 +9,7 @@ else
 	function git_command {
 		git -c color.ui=always pull --recurse-submodules=on-demand 2> /dev/null \
 			| sed -e "s/\(Already\|remote\)/$cr$b${dir##*/}$n/" \
-			      -e "s/^Updating/$b${dir##*/}$n: /"
+			      -e "s/^Updating/$b${dir##*/}$n:/"
 	}
 fi
 b=$(tput bold)
