@@ -15,7 +15,13 @@ fi
 b=$(tput bold)
 n=$(tput sgr0)
 cr=$(tput cr)
-for dir in $GIT/*; do
+
+# add pass store dir
+command -v pass > /dev/null 2>&1 \
+	&& [ -z "${PASSWORD_STORE_DIR:-}" ] \
+	&& PASSWORD_STORE_DIR="$HOME/.password-store"
+
+for dir in $GIT/* $PASSWORD_STORE_DIR; do
 	cd "$dir"
 	git_command &
 done
