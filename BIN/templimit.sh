@@ -10,7 +10,7 @@ verbose=1
 chip='*-isa-*'
 
 function usage {
-cat >&2 <<- EOF
+cat >&2 << EOF
 Usage: $(basename $0) [ -p PID ] | [ -x [ CMD [ ARGS ... ] ] | PID | CMD [ ARGS ... ]
 
 Uses \`sensors\` to get temperature, and sends SIGSTOP and SIGCONT signals to
