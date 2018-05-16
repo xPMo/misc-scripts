@@ -38,7 +38,7 @@ Environment variables:
 	                default is 75
 
 EOF
-(( verbose > 1 )) && cat >&2 <<- EOF
+(( verbose > 1 )) && cat >&2 << EOF
 Verbosity levels: [0-15], Default level is 1
 
 	0:    Only fatal messages printed
