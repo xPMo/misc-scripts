@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 function usage {
-	cat >&2 <<- EOF
+	cat >&2 << EOF
 $(basename $0) [ option [ value ]]
 
 Uses escape codes to set urxvt settings. Settings must exist
