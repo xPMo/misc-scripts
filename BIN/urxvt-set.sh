@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
-function usage {
-	cat >&2 << EOF
+
+function urxvt-set {
+	local val
+	if [ -z $pattern ]; then usage; exit 1; fi
+	val="$(xrdb -query | grep -i -E $pattern | cut -f 2- | sed -e ${replace:-' '} )"
+	echo -ne "\033]$code;$val\033\\"
+}
+
+case $1 in
+
+	-h ) ;&
+	--help )
+		cat >&2 << EOF
 $(basename $0) [ option [ value ]]
 
 Uses escape codes to set urxvt settings. Settings must exist
@@ -11,19 +22,9 @@ to xresources default.
 	-f --font   	sets the size of the terminal font
 	-h --help   	print this help
 EOF
-}
-function urxvt-set {
-	local val
-	if [ -z $pattern ]; then usage; exit 1; fi
-	val="$(xrdb -query | grep -i -E $pattern | cut -f 2- | sed -e ${replace:-' '} )"
-	echo -ne "\033]$code;$val\033\\"
-}
-case $1 in
-	-h ) ;&
-	--help )
-		usage
 		exit 0
 		;;
+
 	-o ) ;&
 	--opacity )
 		shift
@@ -34,6 +35,7 @@ case $1 in
 			shift
 		fi
 		;;
+
 	-f ) ;&
 	--font )
 		shift
@@ -44,5 +46,6 @@ case $1 in
 			shift
 		fi
 		;;
+
 esac
 urxvt-set
