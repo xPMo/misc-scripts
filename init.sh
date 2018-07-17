@@ -8,9 +8,11 @@ if [[ -n $ANDROID_DATA ]]; then
 			chmod +x $2
 		)
 	}
-	for file in termux-BIN/*; do
+	cd termux-BIN
+	for file in *; do
 		link_by $(pwd)/$file $HOME/.local/bin/${file%.*}
 	done
+	cd ..
 else
 	link_by() {
 		[ -L "$2" ] && return
