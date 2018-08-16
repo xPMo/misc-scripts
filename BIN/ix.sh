@@ -14,11 +14,12 @@ while getopts ":hd:i:n:" x; do
 	case $x in
 		h) 
 			cat >&2 << EOF
-ix [-d ID] [-i ID] [-n N] [curl opts]
+$(basename $0) [-d ID] [-i ID] [-n N] [curl opts]
 
 	-d ID   delete the given ID
 	-i ID   replace the given ID
 	-n N    delete the paste after N reads
+	-h      show this help
 
 Curl can work with a filename or stdin. If a filename is
 provided, ix.io will set the name on the paste.
