@@ -6,23 +6,37 @@ function urxvt-set {
 	val="$(xrdb -query | grep -i -E $pattern | cut -f 2- | sed -e ${replace:-' '} )"
 	echo -ne "\033]$code;$val\033\\"
 }
+function usage {
+cat >&2 << EOF
+$(basename $0) [ option [ value ]]
+
+Uses escape codes to set urxvt settings. Settings must exist
+in \`xrdb -query\`.  If no value is provided, setting is reset
+to the xrdb-provided default.
+
+	-o --opacity     sets the opacity of the terminal background
+	-b --background  sets the terminal background as [%%]#XXXXXX
+	-f --font        sets the size of the terminal font
+	-h --help        print this help
+EOF
+}
 
 case $1 in
 
 	-h ) ;&
 	--help )
-		cat >&2 << EOF
-$(basename $0) [ option [ value ]]
-
-Uses escape codes to set urxvt settings. Settings must exist
-in \`xrdb -query\`.  If no value is provided, setting is set
-to xresources default.
-
-	-o --opacity	sets the opacity of the terminal background
-	-f --font   	sets the size of the terminal font
-	-h --help   	print this help
-EOF
+		usage
 		exit 0
+		;;
+	-b ) ;&
+	--background )
+		shift
+		code=49
+		pattern='urxvt.background:'
+		if [[ $1 =~ ^\[1?[0-9]?[0-9]\]#[0-9a-fA-F]{6,6}$ ]]; then
+			replace="s/.*/$1/"
+			shift
+		fi
 		;;
 
 	-o ) ;&
