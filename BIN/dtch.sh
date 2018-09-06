@@ -2,8 +2,11 @@
 set -e
 IFS='
 	'
-[ ${DTACH_SOCKET:-} ] && exit 1
-socket_dir="${PREFIX}/tmp"
-socket_dir="$(mktemp --tmpdir=${socket_dir} --directory dtach.XXX)"
-export DTACH_SOCKET="${socket_dir}/sock"
-exec dtach -A $DTACH_SOCKET $SHELL
+[ ${DTACH_SOCKET:-} ] && {
+	echo >&2 "unset DTACH_SOCKET or exit dtach"
+	exit 1
+}
+dir=$PREFIX/tmp/dtach-$USER
+mkdir -p $dir
+export DTACH_SOCKET="${dir}/${1:-sock}"
+dtach -A $DTACH_SOCKET $SHELL
