@@ -10,7 +10,7 @@ case $1 in
 	* ) # parse as command
 		cmd=$1
 		function git_command {
-			git -C $1 $cmd 2> /dev/null &&
+			git -C $1 -c color.ui=always $cmd 2> /dev/null &&
 				echo "$b${dir##*/}$n done" ||
 				echo "$b${dir##*/}$n failed"
 		} ;;
