@@ -2,8 +2,8 @@
 
 function urxvt-set {
 	local val
-	if [ -z $pattern ]; then usage; exit 1; fi
-	val="$(xrdb -query | grep -i -E $pattern | cut -f 2- | sed -e ${replace:-' '} )"
+	if [[ -z $pattern ]]; then usage; exit 1; fi
+	val="$(xrdb -query | sed -ne "/$pattern/{s/.*\t//; ${replace:-}p}" )"
 	echo -ne "\033]$code;$val\033\\"
 }
 function usage {
