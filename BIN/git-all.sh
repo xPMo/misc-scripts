@@ -24,7 +24,8 @@ command -v pass > /dev/null 2>&1 &&
 	[[ -z "${PASSWORD_STORE_DIR:-}" ]] &&
 	PASSWORD_STORE_DIR="$HOME/.password-store"
 
-for dir in $GIT/* $PASSWORD_STORE_DIR; do
+echo "$GIT_REPO_PATH" | IFS=':' read -ra dirs
+for dir in "${dirs[@]}" $PASSWORD_STORE_DIR; do
 	git_command $dir &
 done
 wait 
