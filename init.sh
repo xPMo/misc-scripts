@@ -1,6 +1,5 @@
-#!/usr/bin/env bash
-shopt -s dotglob
-if [[ -n $ANDROID_DATA ]]; then
+#!/usr/bin/env sh
+if [ $(stat -c '%G' $0) != $USER ]; then
 	link_by() {
 		diff "$1" "$2" -q 2>/dev/null || (
 			echo "Copying $1 -> $2"
@@ -8,11 +7,6 @@ if [[ -n $ANDROID_DATA ]]; then
 			chmod +x $2
 		)
 	}
-	cd termux-BIN
-	for file in *; do
-		link_by $(pwd)/$file $HOME/.local/bin/${file%.*}
-	done
-	cd ..
 else
 	link_by() {
 		[ -L "$2" ] && return
@@ -24,8 +18,17 @@ else
 		fi
 	}
 fi
+
 cd BIN
 for file in *; do
 	link_by $(pwd)/$file $HOME/.local/bin/${file%.*}
 done
 cd ..
+
+if [ -n ${ANDROID_DATA:-} ]; then
+	cd termux-BIN
+	for file in *; do
+		link_by $(pwd)/$file $HOME/.local/bin/${file%.*}
+	done
+	cd ..
+fi
