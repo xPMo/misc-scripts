@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-IFS=$'\n'
-# assumes $GIT is a directory containing only git repos
+IFS=$'\n\t'
+# assumes $GIT_REPO_PATH is colon-seperated list of directories
+# containing only git repos
 case $1 in
 	u|pu|pull)
 		function git_command {
@@ -24,8 +25,11 @@ command -v pass > /dev/null 2>&1 &&
 	[[ -z "${PASSWORD_STORE_DIR:-}" ]] &&
 	PASSWORD_STORE_DIR="$HOME/.password-store"
 
-echo "$GIT_REPO_PATH" | IFS=':' read -ra dirs
-for dir in "${dirs[@]}" $PASSWORD_STORE_DIR; do
+IFS=':'
+dirs=($GIT_REPO_PATH)
+IFS=$OIFS
+shopt -s dotglob
+for dir in ${dirs[@]}/* $PASSWORD_STORE_DIR; do
 	git_command $dir &
 done
 wait 
