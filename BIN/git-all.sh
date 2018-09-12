@@ -25,11 +25,14 @@ command -v pass > /dev/null 2>&1 &&
 	[[ -z "${PASSWORD_STORE_DIR:-}" ]] &&
 	PASSWORD_STORE_DIR="$HOME/.password-store"
 
+typeset -a dirs
 IFS=':'
-dirs=($GIT_REPO_PATH)
-IFS=$OIFS
 shopt -s dotglob
-for dir in ${dirs[@]}/* $PASSWORD_STORE_DIR; do
+for repodir in $GIT_REPO_PATH; do
+	dirs+=($repodir/*)
+done
+IFS=$OIFS
+for dir in ${dirs[@]} $PASSWORD_STORE_DIR; do
 	git_command $dir &
 done
 wait 
