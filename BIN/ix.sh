@@ -28,13 +28,13 @@ EOF
 		d)
 			curl $opts -X DELETE ix.io/$OPTARG
 			exit $?;;
-		i) opts="$opts -X PUT"; local id="$OPTARG";;
+		i) opts="$opts -X PUT"; id="$OPTARG";;
 		n) opts="$opts -F read:1=$OPTARG";;
 	esac
 done
 shift $((OPTIND - 1))
 if [ -t 0 ]; then
-	local filename="$1"
+	filename="$1"
 	shift
 	[ "$filename" ] && {
 		curl $opts -F f:1=@"$filename" $@ ix.io/$id
