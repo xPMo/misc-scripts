@@ -32,7 +32,7 @@ case $1 in
 	--background )
 		shift
 		code=49
-		pattern='urxvt.background:'
+		pattern='xvt.background:'
 		if [[ $1 =~ ^\[1?[0-9]?[0-9]\]#[0-9a-fA-F]{6,6}$ ]]; then
 			replace="s/.*/$1/"
 			shift
@@ -43,7 +43,7 @@ case $1 in
 	--opacity )
 		shift
 		code=49
-		pattern='urxvt.background:'
+		pattern='xvt.background:'
 		if [[ $1 =~ ^1?[0-9]?[0-9]$ ]]; then
 			replace="s/\[[0-9]*\]/[$1]/"
 			shift
@@ -54,7 +54,7 @@ case $1 in
 	--font )
 		shift
 		code=710
-		pattern='urxvt.font:'
+		pattern='xvt.font:'
 		if [[ $1 =~ ^[0-9]+(.5)?$ ]]; then
 			replace="s/size=[0-9.]*/:size=$1/"
 			shift

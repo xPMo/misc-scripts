@@ -2,7 +2,11 @@
 IFS=$'\n\t'
 # assumes $GIT_REPO_PATH is colon-seperated list of directories
 # containing only git repos
-case $1 in
+while [[ $# -gt 0 ]]; do
+	case $1 in
+	-w|--wait)
+		wfi=1
+		;;
 	u|pu|pull)
 		function git_command {
 			git -C $1 -c color.ui=always pull --recurse-submodules=on-demand 2> /dev/null |
@@ -15,7 +19,9 @@ case $1 in
 				echo "$b${dir##*/}$n done" ||
 				echo "$b${dir##*/}$n failed"
 		} ;;
-esac
+	esac
+shift
+done
 b=$(tput bold)
 n=$(tput sgr0)
 cr=$(tput cr)
@@ -36,4 +42,7 @@ for dir in ${dirs[@]} $PASSWORD_STORE_DIR; do
 	git_command $dir &
 done
 wait 
-
+if [[ $wfi == 1 ]]; then
+	read -p "Press any key to continue..." -n1 -s
+	echo
+fi
