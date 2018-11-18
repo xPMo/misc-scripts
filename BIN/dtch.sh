@@ -9,4 +9,4 @@ IFS='
 dir=$PREFIX/tmp/dtach-$USER
 mkdir -p $dir
 export DTACH_SOCKET="${dir}/${1:-sock}"
-dtach -A $DTACH_SOCKET $SHELL
+exec dtach -A $DTACH_SOCKET $SHELL

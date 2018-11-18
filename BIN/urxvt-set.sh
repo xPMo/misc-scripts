@@ -60,6 +60,16 @@ case $1 in
 			shift
 		fi
 		;;
+	-t ) ;&
+	--title )
+		shift
+		echo -ne "\033]0;$1\007"
+		exit 0
+		;;
+	* )
+		usage
+		exit 1
+		;;
 
 esac
 urxvt-set
