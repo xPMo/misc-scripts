@@ -51,7 +51,7 @@ EOF
 }
 
 function debug {
-	unset head
+	local head
 	(( verbose < $1 )) && return
 	(( verbose > 5 )) && head="\e[38;1mDEBUG[${1}]: " >&2
 	case $1 in
