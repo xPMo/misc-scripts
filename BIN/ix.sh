@@ -6,9 +6,6 @@
 #     ix -n 1 self_destruct.txt # paste will be deleted after one read.
 #     ix -i ID hello.txt        # replace ID, if you have permission.
 #     ix -d ID
-IFS='
-	'
-
 [ -f "$HOME/.netrc" ] && opts='-n'
 while getopts ":hd:i:n:" x; do
 	case $x in
